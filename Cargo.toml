@@ -14,6 +14,7 @@ serde_json = "0.6"
 
 [dependencies.correlation]
 path = "../correlation"
+version = "0.4"
 
 [dependencies.syslog-ng-common]
 path = "../syslog-ng-rs/syslog-ng-common/"

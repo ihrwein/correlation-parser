@@ -6,9 +6,9 @@ extern crate serde;
 extern crate syslog_ng_common;
 extern crate correlation;
 
-use correlation::{Response, Request, EventHandler, ContextMap, ResponseHandle, MessageBuilder};
+use correlation::{Request, ContextMap, MessageBuilder, Alert};
 use correlation::config::action::message::InjectMode;
-use correlation::correlator::Correlator;
+use correlation::correlator::{Correlator, AlertHandler};
 use correlation::config::ContextConfig;
 use serde_json::from_str;
 use std::borrow::Borrow;
@@ -16,7 +16,7 @@ use std::io::{self, Read};
 use std::fs::File;
 use std::sync::{mpsc, Arc, Mutex};
 use syslog_ng_common::{MessageFormatter, LogMessage};
-use syslog_ng_common::{Parser, ParserBuilder, OptionError};
+use syslog_ng_common::{Parser, ParserBuilder, OptionError, LogPipe, LogParser};
 
 pub mod options;
 
@@ -40,30 +40,33 @@ impl From<serde_json::error::Error> for Error {
 
 struct MessageSender;
 
-impl EventHandler<Response, mpsc::Sender<Request>> for MessageSender {
-    fn handle_event(&mut self, event: Response, reactor_input_channel: &mut mpsc::Sender<Request>) {
-        if let Response::Alert(msg) = event {
-            match msg.inject_mode {
-                InjectMode::Log => {
-                    debug!("{}", msg.message.message());
-                },
-                InjectMode::Forward => {},
-                InjectMode::Loopback => {
-                    if let Err(err) = reactor_input_channel.send(Request::Message(Arc::new(msg.message))) {
-                        error!("{}", err);
-                    }
-                },
-            }
+impl AlertHandler<LogParser> for MessageSender {
+    fn on_alert(&mut self, alert: Alert, reactor_input_channel: &mut mpsc::Sender<Request>, parent: &mut LogParser) {
+        match alert.inject_mode {
+            InjectMode::Log => {
+                debug!("{}", alert.message.message());
+            },
+            InjectMode::Forward => {
+                let message = alert.message;
+                let mut logmsg = LogMessage::new();
+                for (k, v) in message.values().iter() {
+                    logmsg.insert(k.borrow(), v.borrow());
+                }
+                let pipe = parent.as_pipe();
+            },
+            InjectMode::Loopback => {
+                if let Err(err) = reactor_input_channel.send(Request::Message(Arc::new(alert.message))) {
+                    error!("{}", err);
+                }
+            },
         }
-    }
-    fn handle(&self) -> ResponseHandle {
-        ResponseHandle::Alert
     }
 }
 
 pub struct CorrelationParserBuilder {
     contexts: Option<Vec<ContextConfig>>,
-    formatter: MessageFormatter
+    formatter: MessageFormatter,
+    parent: Option<LogParser>
 }
 
 impl CorrelationParserBuilder {
@@ -101,7 +104,8 @@ impl ParserBuilder for CorrelationParserBuilder {
     fn new() -> Self {
         CorrelationParserBuilder {
             contexts: None,
-            formatter: MessageFormatter::new()
+            formatter: MessageFormatter::new(),
+            parent: None
         }
     }
     fn option(&mut self, name: String, value: String) {
@@ -113,28 +117,33 @@ impl ParserBuilder for CorrelationParserBuilder {
             _ => debug!("CorrelationParser: not supported key: {:?}", name)
         };
     }
+    fn parent(&mut self, parent: LogParser) {
+        self.parent = Some(parent);
+    }
     fn build(self) -> Result<Self::Parser, OptionError> {
         debug!("Building CorrelationParser");
-        let CorrelationParserBuilder {contexts, formatter} = self;
+        let CorrelationParserBuilder {contexts, formatter, parent} = self;
         let contexts = try!(contexts.ok_or(OptionError::missing_required_option(options::CONTEXTS_FILE)));
         let map = ContextMap::from_configs(contexts);
-        let mut correlator = Correlator::new(map);
-        correlator.register_handler(Box::new(MessageSender));
-        Ok(CorrelationParser::new(correlator, formatter))
+        let mut correlator: Correlator<LogParser> = Correlator::new(map);
+        correlator.set_alert_handler(Some(Box::new(MessageSender)));
+        Ok(CorrelationParser::new(correlator, formatter, parent))
     }
 }
 
 #[derive(Clone)]
 pub struct CorrelationParser {
-    correlator: Arc<Mutex<Correlator>>,
-    formatter: MessageFormatter
+    correlator: Arc<Mutex<Correlator<LogParser>>>,
+    formatter: MessageFormatter,
+    parent: LogParser
 }
 
 impl CorrelationParser {
-    pub fn new(correlator: Correlator, formatter: MessageFormatter) -> CorrelationParser {
+    pub fn new(correlator: Correlator<LogParser>, formatter: MessageFormatter, parent: LogParser) -> CorrelationParser {
         CorrelationParser {
             correlator: Arc::new(Mutex::new(correlator)),
             formatter: formatter,
+            parent: parent
         }
     }
 }
