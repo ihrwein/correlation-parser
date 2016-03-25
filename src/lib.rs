@@ -12,13 +12,17 @@ use correlation::correlator::{Correlator, AlertHandler};
 use correlation::config::ContextConfig;
 use serde_json::from_str;
 use std::borrow::Borrow;
+use std::marker::PhantomData;
 use std::io::{self, Read};
 use std::fs::File;
 use std::sync::{mpsc, Arc, Mutex};
 use syslog_ng_common::{MessageFormatter, LogMessage};
-use syslog_ng_common::{Parser, ParserBuilder, OptionError, LogPipe, LogParser};
+use syslog_ng_common::{Parser, ParserBuilder, OptionError, Pipe};
 
 pub mod options;
+
+pub const CLASSIFIER_UUID: &'static str = ".classifier.uuid";
+pub const CLASSIFIER_CLASS: &'static str = ".classifier.class";
 
 #[derive(Debug)]
 enum Error {
@@ -40,21 +44,23 @@ impl From<serde_json::error::Error> for Error {
 
 struct MessageSender;
 
-impl AlertHandler<LogParser> for MessageSender {
-    fn on_alert(&mut self, alert: Alert, reactor_input_channel: &mut mpsc::Sender<Request>, parent: &mut LogParser) {
+impl<P> AlertHandler<P> for MessageSender where P: Pipe {
+    fn on_alert(&mut self, alert: Alert, reactor_input_channel: &mut mpsc::Sender<Request>, parent: &mut P) {
         match alert.inject_mode {
             InjectMode::Log => {
-                debug!("{}", alert.message.message());
+                debug!("LOG: {}", alert.message.message());
             },
             InjectMode::Forward => {
+                debug!("FORWARD: {}", alert.message.message());
                 let message = alert.message;
                 let mut logmsg = LogMessage::new();
                 for (k, v) in message.values().iter() {
                     logmsg.insert(k.borrow(), v.borrow());
                 }
-                let pipe = parent.as_pipe();
+                parent.forward(logmsg);
             },
             InjectMode::Loopback => {
+                debug!("LOOPBACK: {}", alert.message.message());
                 if let Err(err) = reactor_input_channel.send(Request::Message(Arc::new(alert.message))) {
                     error!("{}", err);
                 }
@@ -63,13 +69,13 @@ impl AlertHandler<LogParser> for MessageSender {
     }
 }
 
-pub struct CorrelationParserBuilder {
+pub struct CorrelationParserBuilder<P: Pipe> {
     contexts: Option<Vec<ContextConfig>>,
     formatter: MessageFormatter,
-    parent: Option<LogParser>
+    _marker: PhantomData<P>
 }
 
-impl CorrelationParserBuilder {
+impl<P: Pipe> CorrelationParserBuilder<P> {
     pub fn set_file(&mut self, path: &str) {
         match self.load_contexts(path) {
             Ok(contexts) => {
@@ -99,13 +105,13 @@ impl CorrelationParserBuilder {
     }
 }
 
-impl ParserBuilder for CorrelationParserBuilder {
-    type Parser = CorrelationParser;
+impl<P: Pipe> ParserBuilder<P> for CorrelationParserBuilder<P> {
+    type Parser = CorrelationParser<P>;
     fn new() -> Self {
         CorrelationParserBuilder {
             contexts: None,
             formatter: MessageFormatter::new(),
-            parent: None
+            _marker: PhantomData
         }
     }
     fn option(&mut self, name: String, value: String) {
@@ -117,46 +123,46 @@ impl ParserBuilder for CorrelationParserBuilder {
             _ => debug!("CorrelationParser: not supported key: {:?}", name)
         };
     }
-    fn parent(&mut self, parent: LogParser) {
-        self.parent = Some(parent);
-    }
     fn build(self) -> Result<Self::Parser, OptionError> {
         debug!("Building CorrelationParser");
-        let CorrelationParserBuilder {contexts, formatter, parent} = self;
+        let CorrelationParserBuilder {contexts, formatter, _marker } = self;
         let contexts = try!(contexts.ok_or(OptionError::missing_required_option(options::CONTEXTS_FILE)));
         let map = ContextMap::from_configs(contexts);
-        let mut correlator: Correlator<LogParser> = Correlator::new(map);
+        let mut correlator: Correlator<P> = Correlator::new(map);
         correlator.set_alert_handler(Some(Box::new(MessageSender)));
-        Ok(CorrelationParser::new(correlator, formatter, parent))
+        Ok(CorrelationParser::new(correlator, formatter))
     }
 }
 
-#[derive(Clone)]
-pub struct CorrelationParser {
-    correlator: Arc<Mutex<Correlator<LogParser>>>,
+pub struct CorrelationParser<P: Pipe> {
+    correlator: Arc<Mutex<Correlator<P>>>,
     formatter: MessageFormatter,
-    parent: LogParser
 }
 
-impl CorrelationParser {
-    pub fn new(correlator: Correlator<LogParser>, formatter: MessageFormatter, parent: LogParser) -> CorrelationParser {
+impl<P: Pipe> Clone for CorrelationParser<P> {
+    fn clone(&self) -> CorrelationParser<P> {
+        CorrelationParser { correlator: self.correlator.clone(), formatter: self.formatter.clone() }
+    }
+}
+
+impl<P: Pipe> CorrelationParser<P> {
+    pub fn new(correlator: Correlator<P>, formatter: MessageFormatter) -> CorrelationParser<P> {
         CorrelationParser {
             correlator: Arc::new(Mutex::new(correlator)),
             formatter: formatter,
-            parent: parent
         }
     }
 }
 
-impl Parser for CorrelationParser {
-    fn parse(&mut self, msg: &mut LogMessage, message: &str) -> bool {
+impl<P: Pipe> Parser<P> for CorrelationParser<P> {
+    fn parse(&mut self, parent: &mut P, msg: &mut LogMessage, message: &str) -> bool {
         debug!("CorrelationParser: process()");
         let message = {
             //let tags = msg.tags();
             let values = msg.values();
             debug!("values: {:?}", &values);
-            if let Some(uuid) = values.get(".classifier.uuid") {
-                let name = match values.get(".classifier.class") {
+            if let Some(uuid) = values.get(CLASSIFIER_UUID) {
+                let name = match values.get(CLASSIFIER_CLASS) {
                     Some(name) => Some(name.borrow()),
                     None => None
                 };
@@ -168,6 +174,7 @@ impl Parser for CorrelationParser {
 
         match self.correlator.lock() {
             Ok(mut guard) => {
+                guard.handle_events(parent);
                 match guard.push_message(message) {
                     Ok(_) => true,
                     Err(err) => {
@@ -184,4 +191,4 @@ impl Parser for CorrelationParser {
     }
 }
 
-parser_plugin!(CorrelationParserBuilder);
+parser_plugin!(CorrelationParserBuilder<LogParser>);
