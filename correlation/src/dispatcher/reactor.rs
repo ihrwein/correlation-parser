@@ -37,7 +37,7 @@ impl<E: MsgEvent> RequestReactor<E> {
     }
 }
 
-impl<E: MsgEvent> Reactor for RequestReactor<E> {
+impl<E: MsgEvent> Reactor<E> for RequestReactor<E> {
     type Event = Request;
     fn handle_events(&mut self) {
         let mut shared_data = SharedData::new(&mut self.context_map, &mut *self.responder);
@@ -51,7 +51,7 @@ impl<E: MsgEvent> Reactor for RequestReactor<E> {
         }
     }
     fn register_handler(&mut self,
-                        handler: Box<for<'a> EventHandler<Self::Event, SharedData<'a>>>) {
+                        handler: Box<for<'a> EventHandler<Self::Event, SharedData<'a, E>>>) {
         self.handlers.insert(handler.handle(), handler);
     }
     fn remove_handler_by_handle(&mut self, handler: &RequestHandle) {

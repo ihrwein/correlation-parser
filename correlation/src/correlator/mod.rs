@@ -38,15 +38,15 @@ pub trait AlertHandler<D> {
     fn on_alert(&mut self, alert: Alert, channel: &mut Sender<Request>, extra_data: &mut D);
 }
 
-pub struct Correlator<E: Event, T=()> {
+pub struct Correlator<T, E: Event> {
     dispatcher_input_channel: mpsc::Sender<Request>,
     dispatcher_output_channel: mpsc::Receiver<Response>,
     dispatcher_thread_handle: thread::JoinHandle<ContextMap<E>>,
     alert_handler: Option<Box<AlertHandler<T>>>
 }
 
-impl<E: Event, T> Correlator<E, T> {
-    pub fn new(context_map: ContextMap<E>) -> Correlator<T> {
+impl<T, E: Event> Correlator<T, E> {
+    pub fn new(context_map: ContextMap<E>) -> Correlator<T, E> {
         let (dispatcher_input_channel, rx) = mpsc::channel();
         let (dispatcher_output_channel_tx, dispatcher_output_channel_rx) = mpsc::channel();
         Timer::from_chan(Duration::from_millis(TIMER_STEP_MS),

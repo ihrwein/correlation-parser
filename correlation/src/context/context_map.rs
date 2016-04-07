@@ -84,7 +84,7 @@ pub trait StreamingIterator {
     fn next(&mut self) -> Option<&mut Self::Item>;
 }
 
-pub struct Iterator<'a, E: Event> {
+pub struct Iterator<'a, E: 'a + Event> {
     ids: Option<&'a Vec<usize>>,
     pos: usize,
     contexts: &'a mut Vec<Context<E>>,

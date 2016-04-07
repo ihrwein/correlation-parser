@@ -10,7 +10,7 @@ use dispatcher::response::ResponseSender;
 use context::ContextMap;
 use Event as MsgEvent;
 
-pub struct SharedData<'a, E: MsgEvent> {
+pub struct SharedData<'a, E: 'a + MsgEvent> {
     pub responder: &'a mut ResponseSender,
     pub map: &'a mut ContextMap<E>,
 }
@@ -40,7 +40,7 @@ pub trait Reactor<E: MsgEvent> {
     fn register_handler(&mut self,
                         handler: Box<for<'a> EventHandler<Self::Event, SharedData<'a, E>>>);
     fn remove_handler_by_handle(&mut self,
-                                 handler: &<<Self as Reactor>::Event as Event>::Handle);
+                                 handler: &<<Self as Reactor<E>>::Event as Event>::Handle);
 }
 
 pub trait Event {
