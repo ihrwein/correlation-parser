@@ -22,6 +22,7 @@ use dispatcher::handlers::timer::TimerEventHandler;
 use dispatcher::handlers::message::MessageEventHandler;
 use reactor::{Reactor, EventHandler};
 use timer::Timer;
+use Event;
 
 const TIMER_STEP_MS: u64 = 100;
 
@@ -37,15 +38,15 @@ pub trait AlertHandler<D> {
     fn on_alert(&mut self, alert: Alert, channel: &mut Sender<Request>, extra_data: &mut D);
 }
 
-pub struct Correlator<T=()> {
+pub struct Correlator<E: Event, T=()> {
     dispatcher_input_channel: mpsc::Sender<Request>,
     dispatcher_output_channel: mpsc::Receiver<Response>,
-    dispatcher_thread_handle: thread::JoinHandle<ContextMap>,
+    dispatcher_thread_handle: thread::JoinHandle<ContextMap<E>>,
     alert_handler: Option<Box<AlertHandler<T>>>
 }
 
-impl<T> Correlator<T> {
-    pub fn new(context_map: ContextMap) -> Correlator<T> {
+impl<E: Event, T> Correlator<E, T> {
+    pub fn new(context_map: ContextMap<E>) -> Correlator<T> {
         let (dispatcher_input_channel, rx) = mpsc::channel();
         let (dispatcher_output_channel_tx, dispatcher_output_channel_rx) = mpsc::channel();
         Timer::from_chan(Duration::from_millis(TIMER_STEP_MS),
@@ -106,7 +107,7 @@ impl<T> Correlator<T> {
         }
     }
 
-    pub fn stop(mut self, external_handler_data: &mut T) -> thread::Result<ContextMap> {
+    pub fn stop(mut self, external_handler_data: &mut T) -> thread::Result<ContextMap<E>> {
         self.handle_events(external_handler_data);
         self.stop_dispatcher(external_handler_data);
         self.dispatcher_thread_handle.join()

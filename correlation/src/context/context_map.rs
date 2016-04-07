@@ -10,19 +10,20 @@ use std::collections::HashMap;
 
 use config::ContextConfig;
 use context::Context;
+use Event;
 
 #[derive(Default)]
-pub struct ContextMap {
+pub struct ContextMap<E: Event> {
     map: HashMap<String, Vec<usize>>,
-    contexts: Vec<Context>,
+    contexts: Vec<Context<E>>,
 }
 
-impl ContextMap {
-    pub fn new() -> ContextMap {
+impl<E: Event> ContextMap<E> {
+    pub fn new() -> ContextMap<E> {
         ContextMap::default()
     }
 
-    pub fn from_configs(configs: Vec<ContextConfig>) -> ContextMap {
+    pub fn from_configs(configs: Vec<ContextConfig>) -> ContextMap<E> {
         let mut context_map = ContextMap::new();
         for i in configs {
             context_map.insert(i.into());
@@ -30,7 +31,7 @@ impl ContextMap {
         context_map
     }
 
-    pub fn insert(&mut self, context: Context) {
+    pub fn insert(&mut self, context: Context<E>) {
         self.contexts.push(context);
         let last_context = self.contexts
                                .last()
@@ -64,11 +65,11 @@ impl ContextMap {
         }
     }
 
-    pub fn contexts_mut(&mut self) -> &mut Vec<Context> {
+    pub fn contexts_mut(&mut self) -> &mut Vec<Context<E>> {
         &mut self.contexts
     }
 
-    pub fn contexts_iter_mut(&mut self, key: &str) -> Iterator {
+    pub fn contexts_iter_mut(&mut self, key: &str) -> Iterator<E> {
         let ids = self.map.get(key);
         Iterator {
             ids: ids,
@@ -83,15 +84,15 @@ pub trait StreamingIterator {
     fn next(&mut self) -> Option<&mut Self::Item>;
 }
 
-pub struct Iterator<'a> {
+pub struct Iterator<'a, E: Event> {
     ids: Option<&'a Vec<usize>>,
     pos: usize,
-    contexts: &'a mut Vec<Context>,
+    contexts: &'a mut Vec<Context<E>>,
 }
 
-impl<'a> StreamingIterator for Iterator<'a> {
-    type Item = Context;
-    fn next(&mut self) -> Option<&mut Context> {
+impl<'a, E: Event> StreamingIterator for Iterator<'a, E> {
+    type Item = Context<E>;
+    fn next(&mut self) -> Option<&mut Context<E>> {
         if let Some(ids) = self.ids {
             if let Some(id) = ids.get(self.pos) {
                 self.pos += 1;
@@ -113,8 +114,9 @@ mod tests {
     use context::{Context, LinearContext, BaseContextBuilder};
     use uuid::Uuid;
     use std::time::Duration;
+    use Event;
 
-    fn assert_context_map_contains_uuid(context_map: &mut ContextMap, uuid: &Uuid, key: &str) {
+    fn assert_context_map_contains_uuid<E: Event>(context_map: &mut ContextMap<E>, uuid: &Uuid, key: &str) {
         let mut iter = context_map.contexts_iter_mut(key);
         let context = iter.next().expect("Failed to get back an inserted context");
         if let Context::Linear(ref context) = *context {

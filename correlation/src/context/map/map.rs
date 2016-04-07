@@ -15,17 +15,18 @@ use timer::TimerEvent;
 use context::base::BaseContext;
 use dispatcher::request::Request;
 use dispatcher::response::ResponseSender;
+use Event;
 
 pub type ContextKey = Vec<(String, String)>;
 
-pub struct MapContext {
+pub struct MapContext<E: Event> {
     base: BaseContext,
-    map: BTreeMap<ContextKey, State>,
+    map: BTreeMap<ContextKey, State<E>>,
     context_id: Vec<String>,
 }
 
-impl MapContext {
-    pub fn new(base: BaseContext, context_id: Vec<String>) -> MapContext {
+impl<E: Event> MapContext<E> {
+    pub fn new(base: BaseContext, context_id: Vec<String>) -> MapContext<E> {
         MapContext {
             base: base,
             map: BTreeMap::new(),

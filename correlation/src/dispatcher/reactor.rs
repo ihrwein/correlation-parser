@@ -13,20 +13,21 @@ use dispatcher::demux::Demultiplexer;
 use dispatcher::request::{RequestHandle, Request};
 use reactor::{Event, EventDemultiplexer, EventHandler, Reactor, SharedData};
 use dispatcher::response::ResponseSender;
+use Event as MsgEvent;
 
 #[allow(type_complexity)]
-pub struct RequestReactor {
-    handlers: BTreeMap<RequestHandle, Box<for<'a> EventHandler<Request, SharedData<'a>>>>,
+pub struct RequestReactor<E: MsgEvent> {
+    handlers: BTreeMap<RequestHandle, Box<for<'a> EventHandler<Request, SharedData<'a, E>>>>,
     demultiplexer: Demultiplexer<Request>,
-    pub context_map: ContextMap,
+    pub context_map: ContextMap<E>,
     responder: Box<ResponseSender>,
 }
 
-impl RequestReactor {
+impl<E: MsgEvent> RequestReactor<E> {
     pub fn new(demultiplexer: Demultiplexer<Request>,
-               context_map: ContextMap,
+               context_map: ContextMap<E>,
                responder: Box<ResponseSender>)
-               -> RequestReactor {
+               -> RequestReactor<E> {
         RequestReactor {
             demultiplexer: demultiplexer,
             context_map: context_map,
@@ -36,7 +37,7 @@ impl RequestReactor {
     }
 }
 
-impl Reactor for RequestReactor {
+impl<E: MsgEvent> Reactor for RequestReactor<E> {
     type Event = Request;
     fn handle_events(&mut self) {
         let mut shared_data = SharedData::new(&mut self.context_map, &mut *self.responder);

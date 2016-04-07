@@ -15,14 +15,15 @@ use timer::TimerEvent;
 use dispatcher::request::Request;
 use dispatcher::response::ResponseSender;
 use context::base::BaseContext;
+use Event;
 
-pub struct LinearContext {
+pub struct LinearContext<E: Event> {
     base: BaseContext,
-    state: State,
+    state: State<E>,
 }
 
-impl LinearContext {
-    pub fn new(base: BaseContext) -> LinearContext {
+impl<E: Event> LinearContext<E> {
+    pub fn new(base: BaseContext) -> LinearContext<E> {
         LinearContext {
             base: base,
             state: State::new(),
