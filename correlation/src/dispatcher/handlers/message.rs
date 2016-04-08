@@ -14,8 +14,8 @@ use Event;
 #[derive(Default)]
 pub struct MessageEventHandler;
 
-impl<'a, E: Event> EventHandler<Request, SharedData<'a, E>> for MessageEventHandler {
-    fn handle_event(&mut self, event: Request, data: &mut SharedData<E>) {
+impl<'a, E: Event> EventHandler<Request<E>, SharedData<'a, E>> for MessageEventHandler {
+    fn handle_event(&mut self, event: Request<E>, data: &mut SharedData<E>) {
         trace!("MessageEventHandler: handle_event()");
         if let Request::Message(event) = event {
             for i in event.ids() {

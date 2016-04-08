@@ -12,10 +12,18 @@ use config::ContextConfig;
 use context::Context;
 use Event;
 
-#[derive(Default)]
 pub struct ContextMap<E: Event> {
     map: HashMap<String, Vec<usize>>,
     contexts: Vec<Context<E>>,
+}
+
+impl<E: Event> Default for ContextMap<E> {
+    fn default() -> ContextMap<E> {
+        ContextMap {
+            map: HashMap::default(),
+            contexts: Vec::default()
+        }
+    }
 }
 
 impl<E: Event> ContextMap<E> {
@@ -38,16 +46,16 @@ impl<E: Event> ContextMap<E> {
                                .expect("Failed to remove the last Context from a non empty vector");
         let index_of_last_context = self.contexts.len() - 1;
         let patterns = last_context.patterns();
-        ContextMap::update_indices(&mut self.map, index_of_last_context, patterns);
+        ContextMap::<E>::update_indices(&mut self.map, index_of_last_context, patterns);
     }
 
     fn update_indices(map: &mut HashMap<String, Vec<usize>>,
                       new_index: usize,
                       patterns: &[String]) {
         if patterns.is_empty() {
-            ContextMap::add_index_to_every_index_vectors(map, new_index);
+            ContextMap::<E>::add_index_to_every_index_vectors(map, new_index);
         } else {
-            ContextMap::add_index_to_looked_up_index_vectors(map, new_index, patterns);
+            ContextMap::<E>::add_index_to_looked_up_index_vectors(map, new_index, patterns);
         }
     }
 
@@ -115,6 +123,7 @@ mod tests {
     use uuid::Uuid;
     use std::time::Duration;
     use Event;
+    use Message;
 
     fn assert_context_map_contains_uuid<E: Event>(context_map: &mut ContextMap<E>, uuid: &Uuid, key: &str) {
         let mut iter = context_map.contexts_iter_mut(key);
@@ -129,7 +138,7 @@ mod tests {
     #[test]
     fn test_given_context_map_when_a_context_is_inserted_then_its_patters_are_inserted_to_the_map_with_its_id
         () {
-        let mut context_map = ContextMap::new();
+        let mut context_map = ContextMap::<Message>::new();
         let uuid = Uuid::new_v4();
         let context1 = {
             let conditions = {

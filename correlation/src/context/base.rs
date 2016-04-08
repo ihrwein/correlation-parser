@@ -15,7 +15,6 @@ use conditions::Conditions;
 use state::State;
 use dispatcher::response::ResponseSender;
 use action::Action;
-use message::Message;
 use timer::TimerEvent;
 use Event;
 
@@ -40,9 +39,9 @@ impl BaseContext {
         &self.actions
     }
 
-    pub fn is_opening(&self, message: &Message) -> bool {
+    pub fn is_opening<E: Event>(&self, message: &E) -> bool {
         if self.conditions.first_opens {
-            self.patterns.first().iter().any(|first| message.ids().any(|id| &id == first))
+            self.patterns.first().iter().any(|first| message.ids().into_iter().any(|id| &id == first))
         } else {
             true
         }
@@ -65,7 +64,7 @@ impl BaseContext {
     fn is_closing_message<E: Event>(&self, state: &State<E>) -> bool {
         if self.conditions.last_closes {
             state.messages().last().iter().any(|last_message| {
-                self.patterns.last().iter().any(|last| last_message.ids().any(|id| &id == last))
+                self.patterns.last().iter().any(|last| last_message.ids().into_iter().any(|id| &id == last))
             })
         } else {
             false
@@ -99,12 +98,12 @@ impl BaseContext {
     }
 
     pub fn on_message<E: Event>(&self,
-                      event: Arc<Message>,
+                      event: Arc<E>,
                       state: &mut State<E>,
                       responder: &mut ResponseSender) {
         if state.is_open() {
             state.add_message(event);
-        } else if self.is_opening(&event) {
+        } else if self.is_opening(&*event) {
             state.add_message(event);
             self.open(state, responder);
         }

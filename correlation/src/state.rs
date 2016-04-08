@@ -8,7 +8,6 @@
 
 use std::sync::Arc;
 
-use Message;
 use Event;
 use timer::TimerEvent;
 use std::time::Duration;
@@ -32,7 +31,7 @@ impl<E: Event> State<E> {
         State::default()
     }
 
-    pub fn with_messages(messages: Vec<Arc<Message>>) -> State<E> {
+    pub fn with_messages(messages: Vec<Arc<E>>) -> State<E> {
         State {
             elapsed_time: Duration::from_secs(0),
             elapsed_time_since_last_message: Duration::from_secs(0),
@@ -61,11 +60,11 @@ impl<E: Event> State<E> {
         self.elapsed_time_since_last_message
     }
 
-    pub fn messages(&self) -> &[Arc<Message>] {
+    pub fn messages(&self) -> &[Arc<E>] {
         &self.messages
     }
 
-    pub fn add_message(&mut self, message: Arc<Message>) {
+    pub fn add_message(&mut self, message: Arc<E>) {
         self.messages.push(message);
         self.elapsed_time_since_last_message = Duration::from_secs(0);
     }

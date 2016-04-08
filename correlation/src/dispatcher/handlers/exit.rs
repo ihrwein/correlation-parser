@@ -15,8 +15,8 @@ use Event;
 #[derive(Default)]
 pub struct ExitEventHandler;
 
-impl<'a, E: Event> EventHandler<Request, SharedData<'a, E>> for ExitEventHandler {
-    fn handle_event(&mut self, event: Request, data: &mut SharedData<E>) {
+impl<'a, E: Event> EventHandler<Request<E>, SharedData<'a, E>> for ExitEventHandler {
+    fn handle_event(&mut self, event: Request<E>, data: &mut SharedData<E>) {
         if let Request::Exit = event {
             data.responder.send_response(Response::Exit);
         } else {

@@ -11,7 +11,7 @@ use std::thread;
 use std::time::Duration;
 use std::sync::Arc;
 
-use {Message, Response};
+use Response;
 use action::Alert;
 use context::ContextMap;
 use dispatcher::request::Request;
@@ -34,15 +34,15 @@ mod factory;
 #[cfg(test)]
 mod test;
 
-pub trait AlertHandler<D> {
-    fn on_alert(&mut self, alert: Alert, channel: &mut Sender<Request>, extra_data: &mut D);
+pub trait AlertHandler<D, E> where E: Event {
+    fn on_alert(&mut self, alert: Alert, channel: &mut Sender<Request<E>>, extra_data: &mut D);
 }
 
-pub struct Correlator<T, E: Event> {
-    dispatcher_input_channel: mpsc::Sender<Request>,
+pub struct Correlator<T, E: 'static + Event> {
+    dispatcher_input_channel: mpsc::Sender<Request<E>>,
     dispatcher_output_channel: mpsc::Receiver<Response>,
     dispatcher_thread_handle: thread::JoinHandle<ContextMap<E>>,
-    alert_handler: Option<Box<AlertHandler<T>>>
+    alert_handler: Option<Box<AlertHandler<T, E>>>
 }
 
 impl<T, E: Event> Correlator<T, E> {
@@ -78,11 +78,11 @@ impl<T, E: Event> Correlator<T, E> {
     }
 
     pub fn set_alert_handler(&mut self,
-                            handler: Option<Box<AlertHandler<T>>>) {
+                            handler: Option<Box<AlertHandler<T, E>>>) {
         self.alert_handler = handler;
     }
 
-    pub fn push_message(&mut self, message: Message) -> Result<(), mpsc::SendError<Request>> {
+    pub fn push_message(&mut self, message: E) -> Result<(), mpsc::SendError<Request<E>>> {
         self.dispatcher_input_channel.send(Request::Message(Arc::new(message)))
     }
 

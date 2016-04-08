@@ -17,14 +17,14 @@ use Event as MsgEvent;
 
 #[allow(type_complexity)]
 pub struct RequestReactor<E: MsgEvent> {
-    handlers: BTreeMap<RequestHandle, Box<for<'a> EventHandler<Request, SharedData<'a, E>>>>,
-    demultiplexer: Demultiplexer<Request>,
+    handlers: BTreeMap<RequestHandle, Box<for<'a> EventHandler<Request<E>, SharedData<'a, E>>>>,
+    demultiplexer: Demultiplexer<Request<E>>,
     pub context_map: ContextMap<E>,
     responder: Box<ResponseSender>,
 }
 
 impl<E: MsgEvent> RequestReactor<E> {
-    pub fn new(demultiplexer: Demultiplexer<Request>,
+    pub fn new(demultiplexer: Demultiplexer<Request<E>>,
                context_map: ContextMap<E>,
                responder: Box<ResponseSender>)
                -> RequestReactor<E> {
@@ -38,7 +38,7 @@ impl<E: MsgEvent> RequestReactor<E> {
 }
 
 impl<E: MsgEvent> Reactor<E> for RequestReactor<E> {
-    type Event = Request;
+    type Event = Request<E>;
     fn handle_events(&mut self) {
         let mut shared_data = SharedData::new(&mut self.context_map, &mut *self.responder);
         while let Some(request) = self.demultiplexer.select() {
