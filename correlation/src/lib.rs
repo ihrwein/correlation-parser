@@ -113,3 +113,29 @@ pub enum TemplatableString<T: Template> {
     Literal(String),
     Template(T)
 }
+
+use std::marker::PhantomData;
+
+pub struct Visitor<T: Template> {
+    _marker: PhantomData<T>
+}
+
+use serde::de;
+
+impl<T> de::Visitor for Visitor<T> where T: Template {
+    type Value = TemplatableString<T>;
+
+    fn visit_str<E>(&mut self, value: &str) -> Result<TemplatableString<T>, E>
+        where E: de::Error
+    {
+        Ok(TemplatableString::Literal(value.to_owned()))
+    }
+}
+
+impl<T> de::Deserialize for TemplatableString<T> where T: Template {
+    fn deserialize<D>(deserializer: &mut D) -> Result<TemplatableString<T>, D::Error>
+        where D: de::Deserializer
+    {
+        deserializer.deserialize_str(Visitor {_marker: PhantomData})
+    }
+}
