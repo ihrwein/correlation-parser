@@ -11,6 +11,7 @@ use context::base::BaseContext;
 use dispatcher::Response;
 use dispatcher::response::ResponseSender;
 use Event;
+use TemplatableString;
 
 use std::collections::BTreeMap;
 use std::borrow::Borrow;
@@ -33,7 +34,7 @@ pub struct MessageAction {
     uuid: String,
     name: Option<String>,
     message: String,
-    values: BTreeMap<String, String>,
+    values: BTreeMap<String, TemplatableString>,
     when: ExecCondition,
     inject_mode: InjectMode,
 }
@@ -48,7 +49,7 @@ impl MessageAction {
     pub fn message(&self) -> &String {
         &self.message
     }
-    pub fn values(&self) -> &BTreeMap<String, String> {
+    pub fn values(&self) -> &BTreeMap<String, TemplatableString> {
         &self.values
     }
     pub fn inject_mode(&self) -> &InjectMode {
@@ -59,7 +60,8 @@ impl MessageAction {
         let mut event = E::new(&self.uuid, &self.message);
         event.set_name(self.name.as_ref().map(|name| name.borrow()));
         for (k, v) in &self.values {
-            event.set(k, v);
+            let &TemplatableString::Literal(ref value) = v;
+            event.set(k, value);
         }
         let response = Alert {
             message: event,

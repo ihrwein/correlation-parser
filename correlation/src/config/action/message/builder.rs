@@ -6,6 +6,7 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
+use TemplatableString;
 use super::MessageAction;
 use super::InjectMode;
 use config::action::ExecCondition;
@@ -16,7 +17,7 @@ pub struct MessageActionBuilder {
     uuid: String,
     name: Option<String>,
     message: String,
-    values: BTreeMap<String, String>,
+    values: BTreeMap<String, TemplatableString>,
     when: ExecCondition,
     inject_mode: InjectMode,
 }
@@ -43,13 +44,13 @@ impl MessageActionBuilder {
         self
     }
 
-    pub fn values(mut self, values: BTreeMap<String, String>) -> MessageActionBuilder {
+    pub fn values(mut self, values: BTreeMap<String, TemplatableString>) -> MessageActionBuilder {
         self.values = values;
         self
     }
 
     pub fn pair<S: Into<String>>(mut self, key: S, value: S) -> MessageActionBuilder {
-        self.values.insert(key.into(), value.into());
+        self.values.insert(key.into(), TemplatableString::Literal(value.into()));
         self
     }
 

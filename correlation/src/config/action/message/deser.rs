@@ -12,6 +12,7 @@ use config::action::ExecCondition;
 
 use serde::de::{Deserialize, Deserializer, Error, MapVisitor, Visitor};
 use std::collections::BTreeMap;
+use TemplatableString;
 
 impl Deserialize for MessageAction {
     fn deserialize<D>(deserializer: &mut D) -> Result<MessageAction, D::Error>
@@ -69,7 +70,7 @@ impl Visitor for MessageActionVisitor {
         let mut name: Option<String> = None;
         let mut uuid: Option<String> = None;
         let mut message: Option<String> = None;
-        let mut values: Option<BTreeMap<String, String>> = None;
+        let mut values: Option<BTreeMap<String, TemplatableString>> = None;
         let mut when: ExecCondition = ExecCondition::new();
         let mut inject_mode = Default::default();
 
