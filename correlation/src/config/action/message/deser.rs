@@ -102,7 +102,7 @@ impl Visitor for MessageActionVisitor {
 
         Ok(MessageAction {
             uuid: uuid,
-            message: message,
+            message: TemplatableString::Literal(message),
             name: name,
             values: values.unwrap_or_default(),
             when: when,

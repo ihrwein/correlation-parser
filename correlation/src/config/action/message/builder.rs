@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 pub struct MessageActionBuilder {
     uuid: String,
     name: Option<String>,
-    message: String,
+    message: TemplatableString,
     values: BTreeMap<String, TemplatableString>,
     when: ExecCondition,
     inject_mode: InjectMode,
@@ -27,7 +27,7 @@ impl MessageActionBuilder {
         MessageActionBuilder {
             uuid: uuid.into(),
             name: None,
-            message: message.into(),
+            message: TemplatableString::Literal(message.into()),
             values: BTreeMap::default(),
             when: ExecCondition::default(),
             inject_mode: InjectMode::default(),

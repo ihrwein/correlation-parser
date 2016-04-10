@@ -33,7 +33,7 @@ pub const MESSAGES: &'static str = "messages";
 pub struct MessageAction {
     uuid: String,
     name: Option<String>,
-    message: String,
+    message: TemplatableString,
     values: BTreeMap<String, TemplatableString>,
     when: ExecCondition,
     inject_mode: InjectMode,
@@ -47,7 +47,8 @@ impl MessageAction {
         self.name.as_ref()
     }
     pub fn message(&self) -> &String {
-        &self.message
+        let TemplatableString::Literal(ref message) = self.message;
+        &message
     }
     pub fn values(&self) -> &BTreeMap<String, TemplatableString> {
         &self.values
@@ -57,7 +58,8 @@ impl MessageAction {
     }
 
     fn execute<E: Event>(&self, _state: &State<E>, _context: &BaseContext, responder: &mut ResponseSender<E>) {
-        let mut event = E::new(&self.uuid, &self.message);
+        let TemplatableString::Literal(ref message) = self.message;
+        let mut event = E::new(&self.uuid, message);
         event.set_name(self.name.as_ref().map(|name| name.borrow()));
         for (k, v) in &self.values {
             let &TemplatableString::Literal(ref value) = v;
