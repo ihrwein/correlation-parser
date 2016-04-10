@@ -109,33 +109,28 @@ pub trait Template {
     fn format(&self, messages: &[Self::Event], context_id: &str) -> &str;
 }
 
-pub enum TemplatableString<T: Template> {
+pub enum TemplatableString {
     Literal(String),
-    Template(T)
 }
 
-use std::marker::PhantomData;
-
-pub struct Visitor<T: Template> {
-    _marker: PhantomData<T>
-}
+pub struct Visitor;
 
 use serde::de;
 
-impl<T> de::Visitor for Visitor<T> where T: Template {
-    type Value = TemplatableString<T>;
+impl de::Visitor for Visitor {
+    type Value = TemplatableString;
 
-    fn visit_str<E>(&mut self, value: &str) -> Result<TemplatableString<T>, E>
+    fn visit_str<E>(&mut self, value: &str) -> Result<TemplatableString, E>
         where E: de::Error
     {
         Ok(TemplatableString::Literal(value.to_owned()))
     }
 }
 
-impl<T> de::Deserialize for TemplatableString<T> where T: Template {
-    fn deserialize<D>(deserializer: &mut D) -> Result<TemplatableString<T>, D::Error>
+impl de::Deserialize for TemplatableString {
+    fn deserialize<D>(deserializer: &mut D) -> Result<TemplatableString, D::Error>
         where D: de::Deserializer
     {
-        deserializer.deserialize_str(Visitor {_marker: PhantomData})
+        deserializer.deserialize_str(Visitor)
     }
 }
