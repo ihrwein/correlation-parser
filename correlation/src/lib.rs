@@ -104,9 +104,13 @@ pub trait TemplateFactory {
 
 pub struct CompileError(String);
 
+use std::sync::Arc;
+
 pub trait Template: Send {
     type Event: Event;
-    fn format(&self, messages: &[Self::Event], context_id: &str) -> &str;
+    fn format(&self, message: &Self::Event) -> &str;
+    fn format_with_context(&self, messages: &[Arc<Self::Event>], context_id: &str) -> &str;
+    fn raw(&self) -> &str;
 }
 
 pub enum TemplatableString<E> where E: Event {
