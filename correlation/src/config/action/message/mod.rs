@@ -57,7 +57,7 @@ impl<T> MessageAction<T> {
         &self.inject_mode
     }
 
-    fn execute<E>(&self, _state: &State<E>, _context: &BaseContext<E>, responder: &mut ResponseSender<E>) where E: Event, T: Template<Event=E> {
+    fn execute<E>(&self, _state: &State<E>, _context: &BaseContext<E, T>, responder: &mut ResponseSender<E>) where E: Event, T: Template<Event=E> {
         let context_id = _context.uuid.to_hyphenated_string();
         let message = self.message.format_with_context(_state.messages(), &context_id);
         let mut event = E::new(&self.uuid, &message);
@@ -99,15 +99,15 @@ pub struct Alert<E: Event> {
     pub inject_mode: InjectMode,
 }
 
-impl<E, T> Action<E> for MessageAction<T> where E: Event, T: Template<Event=E> {
-    fn on_opened(&self, state: &State<E>, context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
+impl<E, T> Action<E, T> for MessageAction<T> where E: Event, T: Template<Event=E> {
+    fn on_opened(&self, state: &State<E>, context: &BaseContext<E, T>, responder: &mut ResponseSender<E>) {
         if self.when.on_opened {
             trace!("MessageAction: on_opened()");
             self.execute(state, context, responder);
         }
     }
 
-    fn on_closed(&self, state: &State<E>, context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
+    fn on_closed(&self, state: &State<E>, context: &BaseContext<E, T>, responder: &mut ResponseSender<E>) {
         if self.when.on_closed {
             trace!("MessageAction: on_closed()");
             self.execute(state, context, responder);

@@ -13,9 +13,11 @@ use context::Context;
 use Event;
 use Template;
 
+pub type TemplateType<E: Event> = Box<Template<Event=E>>;
+
 pub struct ContextMap<E> where E: Event {
     map: HashMap<String, Vec<usize>>,
-    contexts: Vec<Context<E>>,
+    contexts: Vec<Context<E, TemplateType<E>>>,
 }
 
 impl<E: Event> Default for ContextMap<E> {
@@ -32,7 +34,7 @@ impl<E> ContextMap<E> where E: Event {
         ContextMap::default()
     }
 
-    pub fn from_configs(configs: Vec<ContextConfig<String>>) -> ContextMap<E> {
+    pub fn from_configs<T>(configs: Vec<ContextConfig<T>>) -> ContextMap<E> {
         let mut context_map = ContextMap::new();
         for i in configs {
             context_map.insert(i.into());
@@ -40,7 +42,7 @@ impl<E> ContextMap<E> where E: Event {
         context_map
     }
 
-    pub fn insert(&mut self, context: Context<E>) {
+    pub fn insert(&mut self, context: Context<E, TemplateType<E>>) {
         self.contexts.push(context);
         let last_context = self.contexts
                                .last()
@@ -74,7 +76,7 @@ impl<E> ContextMap<E> where E: Event {
         }
     }
 
-    pub fn contexts_mut(&mut self) -> &mut Vec<Context<E>> {
+    pub fn contexts_mut(&mut self) -> &mut Vec<Context<E, TemplateType<E>>> {
         &mut self.contexts
     }
 
@@ -96,12 +98,12 @@ pub trait StreamingIterator {
 pub struct Iterator<'a, E: 'a + Event> {
     ids: Option<&'a Vec<usize>>,
     pos: usize,
-    contexts: &'a mut Vec<Context<E>>,
+    contexts: &'a mut Vec<Context<E, TemplateType<E>>>,
 }
 
 impl<'a, E: Event> StreamingIterator for Iterator<'a, E> {
-    type Item = Context<E>;
-    fn next(&mut self) -> Option<&mut Context<E>> {
+    type Item = Context<E, TemplateType<E>>;
+    fn next(&mut self) -> Option<&mut Context<E, TemplateType<E>>> {
         if let Some(ids) = self.ids {
             if let Some(id) = ids.get(self.pos) {
                 self.pos += 1;

@@ -19,15 +19,15 @@ use timer::TimerEvent;
 use Event;
 use Template;
 
-pub struct BaseContext<E> where E: Event {
+pub struct BaseContext<E, T> where E: Event, T: Template<Event=E> {
     pub name: Option<String>,
     pub uuid: Uuid,
     pub conditions: Conditions,
-    pub actions: Vec<ActionType<Box<Template<Event=E>>>>,
+    pub actions: Vec<ActionType<T>>,
     pub patterns: Vec<String>,
 }
 
-impl<E> BaseContext<E> where E: Event {
+impl<E, T> BaseContext<E, T> where E: Event, T: Template<Event=E> {
     pub fn uuid(&self) -> &Uuid {
         &self.uuid
     }
@@ -36,7 +36,7 @@ impl<E> BaseContext<E> where E: Event {
         self.name.as_ref()
     }
 
-    pub fn actions(&self) -> &[ActionType<Box<Template<Event=E>>>] {
+    pub fn actions(&self) -> &[ActionType<T>] {
         &self.actions
     }
 
@@ -131,16 +131,16 @@ impl<E> BaseContext<E> where E: Event {
     }
 }
 
-pub struct BaseContextBuilder<E> where E: Event {
+pub struct BaseContextBuilder<E, T> where E: Event, T: Template<Event=E> {
     name: Option<String>,
     uuid: Uuid,
     conditions: Conditions,
-    actions: Vec<ActionType<Box<Template<Event=E>>>>,
+    actions: Vec<ActionType<T>>,
     patterns: Vec<String>
 }
 
-impl<E> BaseContextBuilder<E> where E: Event {
-    pub fn new(uuid: Uuid, conditions: Conditions) -> BaseContextBuilder<E> {
+impl<E, T> BaseContextBuilder<E, T> where E: Event, T: Template<Event=E> {
+    pub fn new(uuid: Uuid, conditions: Conditions) -> BaseContextBuilder<E, T> {
         BaseContextBuilder {
             name: None,
             uuid: uuid,
@@ -150,21 +150,21 @@ impl<E> BaseContextBuilder<E> where E: Event {
         }
     }
 
-    pub fn name(mut self, name: Option<String>) -> BaseContextBuilder<E> {
+    pub fn name(mut self, name: Option<String>) -> BaseContextBuilder<E, T> {
         self.name = name;
         self
     }
 
-    pub fn actions(mut self, actions: Vec<ActionType<Box<Template<Event=E>>>>) -> BaseContextBuilder<E> {
+    pub fn actions(mut self, actions: Vec<ActionType<T>>) -> BaseContextBuilder<E, T> {
         self.actions = actions;
         self
     }
 
-    pub fn patterns(mut self, patterns: Vec<String>) -> BaseContextBuilder<E> {
+    pub fn patterns(mut self, patterns: Vec<String>) -> BaseContextBuilder<E, T> {
         self.patterns = patterns;
         self
     }
-    pub fn build(self) -> BaseContext<E> {
+    pub fn build(self) -> BaseContext<E, T> {
         let BaseContextBuilder {name, uuid, conditions, actions, patterns} = self;
         BaseContext {
             name: name,
