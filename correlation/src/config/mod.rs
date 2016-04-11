@@ -31,7 +31,7 @@ pub struct ContextConfig<T> {
 
 use context::context_map::TemplateType;
 
-fn compile_templates<E, TF>(original: Vec<ContextConfig<String>>, factory: &TF) -> Result<Vec<ContextConfig<TemplateType<E>>>, CompileError>
+pub fn compile_templates<E, TF>(original: Vec<ContextConfig<String>>, factory: &TF) -> Result<Vec<ContextConfig<TemplateType<E>>>, CompileError>
     where E: Event, TF: TemplateFactory<E> {
     let mut new_contexts: Vec<ContextConfig<TemplateType<E>>> = Vec::new();
     for context in original {

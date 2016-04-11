@@ -48,7 +48,7 @@ impl<T> MessageAction<T> {
         self.name.as_ref()
     }
     pub fn message(&self) -> &T {
-        &self.message;
+        &self.message
     }
     pub fn values(&self) -> &BTreeMap<String, T> {
         &self.values
