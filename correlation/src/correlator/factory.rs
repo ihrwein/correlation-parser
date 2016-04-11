@@ -13,18 +13,41 @@ use std::path::Path;
 use serde_json;
 use serde_yaml;
 
+use config::action::ActionType;
 use config::ContextConfig;
 use ContextMap;
 use super::Correlator;
 use super::Error;
 use Event;
+use TemplateFactory;
+use TemplatableString;
 
 pub struct CorrelatorFactory;
 
 impl CorrelatorFactory {
-    pub fn from_path<T, P, E>(path: P) -> Result<Correlator<T, E>, Error>
+    pub fn from_path<T, P, E>(path: P, template_factory: &mut TemplateFactory<E>) -> Result<Correlator<T, E>, Error>
         where P: AsRef<Path>, E: Event {
-        let contexts = try!(CorrelatorFactory::load_file(path));
+        let mut contexts = try!(CorrelatorFactory::load_file(path));
+
+        for c in &mut contexts {
+            for a in &mut c.actions {
+                let ActionType::Message(ref mut action) = *a;
+                let msg_template = if let TemplatableString::Literal(ref message) = action.message {
+                    try!(template_factory.compile(message))
+                } else {
+                    panic!("TODO");
+                };
+                action.message = TemplatableString::Template(msg_template);
+                for (_, v) in &mut action.values {
+                    let value_template = if let TemplatableString::Literal(ref value) = *v {
+                        try!(template_factory.compile(value))
+                    } else {
+                        panic!("TODO");
+                    };
+                    *v = TemplatableString::Template(value_template);
+                }
+            }
+        }
         Ok(Correlator::new(ContextMap::from_configs(contexts)))
     }
 
