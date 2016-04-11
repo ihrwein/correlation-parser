@@ -46,9 +46,11 @@ impl<E> MessageAction<E> where E: Event {
     pub fn name(&self) -> Option<&String> {
         self.name.as_ref()
     }
-    pub fn message(&self) -> &String {
-        let TemplatableString::Literal(ref message) = self.message;
-        &message
+    pub fn message(&self) -> &str {
+        match self.message {
+            TemplatableString::Literal(ref literal) => literal.borrow(),
+            TemplatableString::Template(ref template) => template.raw()
+        }
     }
     pub fn values(&self) -> &BTreeMap<String, TemplatableString<E>> {
         &self.values
@@ -58,11 +60,22 @@ impl<E> MessageAction<E> where E: Event {
     }
 
     fn execute(&self, _state: &State<E>, _context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
-        let TemplatableString::Literal(ref message) = self.message;
+        let context_id = _context.uuid().to_hyphenated_string();
+        let message = match self.message {
+            TemplatableString::Literal(ref literal) => literal.borrow(),
+            TemplatableString::Template(ref template) => {
+                template.format_with_context(&_state.messages(), &context_id)
+            },
+        };
         let mut event = E::new(&self.uuid, message);
         event.set_name(self.name.as_ref().map(|name| name.borrow()));
         for (k, v) in &self.values {
-            let &TemplatableString::Literal(ref value) = v;
+            let value: &str = match *v {
+                TemplatableString::Literal(ref value) => value.borrow(),
+                TemplatableString::Template(ref template) => {
+                    template.format_with_context(&_state.messages(), &context_id)
+                }
+            };
             event.set(k, value);
         }
         let response = Alert {
