@@ -10,11 +10,12 @@ use config::ContextConfig;
 use serde::de::{Deserialize, Deserializer, MapVisitor, Error, Visitor};
 
 use uuid::Uuid;
+use std::marker::PhantomData;
 
 const FIELDS: &'static [&'static str] = &["name", "uuid", "conditions", "actions"];
 
-impl Deserialize for ContextConfig {
-    fn deserialize<D>(deserializer: &mut D) -> Result<ContextConfig, D::Error>
+impl<T> Deserialize for ContextConfig<T> {
+    fn deserialize<D>(deserializer: &mut D) -> Result<ContextConfig<T>, D::Error>
         where D: Deserializer
     {
         deserializer.deserialize_struct("Context", FIELDS, ContextVisitor)
@@ -58,9 +59,9 @@ impl Deserialize for Field {
     }
 }
 
-struct ContextVisitor;
+struct ContextVisitor<T> (PhantomData<T>);
 
-impl ContextVisitor {
+impl<T> ContextVisitor<T> {
     fn parse_uuid<V>(uuid: Option<String>) -> Result<Uuid, V::Error>
         where V: MapVisitor
     {
@@ -81,8 +82,8 @@ impl ContextVisitor {
     }
 }
 
-impl Visitor for ContextVisitor {
-    type Value = ContextConfig;
+impl<T> Visitor for ContextVisitor<T> {
+    type Value = ContextConfig<T>;
 
     fn visit_map<V>(&mut self, mut visitor: V) -> Result<ContextConfig, V::Error>
         where V: MapVisitor

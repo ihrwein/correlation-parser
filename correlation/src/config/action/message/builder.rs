@@ -13,17 +13,17 @@ use config::action::ExecCondition;
 
 use std::collections::BTreeMap;
 
-pub struct MessageActionBuilder {
+pub struct MessageActionBuilder<T> {
     uuid: String,
     name: Option<String>,
-    message: TemplatableString,
-    values: BTreeMap<String, TemplatableString>,
+    message: T,
+    values: BTreeMap<String, T>,
     when: ExecCondition,
     inject_mode: InjectMode,
 }
 
-impl MessageActionBuilder {
-    pub fn new<S: Into<String>>(uuid: S, message: S) -> MessageActionBuilder {
+impl<T> MessageActionBuilder<T> {
+    pub fn new<S: Into<String>>(uuid: S, message: S) -> MessageActionBuilder<T> {
         MessageActionBuilder {
             uuid: uuid.into(),
             name: None,
@@ -34,32 +34,32 @@ impl MessageActionBuilder {
         }
     }
 
-    pub fn name<S: Into<String>>(mut self, name: Option<S>) -> MessageActionBuilder {
+    pub fn name<S: Into<String>>(mut self, name: Option<S>) -> MessageActionBuilder<T> {
         self.name = name.map(|name| name.into());
         self
     }
 
-    pub fn when(mut self, when: ExecCondition) -> MessageActionBuilder {
+    pub fn when(mut self, when: ExecCondition) -> MessageActionBuilder<T> {
         self.when = when;
         self
     }
 
-    pub fn values(mut self, values: BTreeMap<String, TemplatableString>) -> MessageActionBuilder {
+    pub fn values(mut self, values: BTreeMap<String, T>) -> MessageActionBuilder<T> {
         self.values = values;
         self
     }
 
-    pub fn pair<S: Into<String>>(mut self, key: S, value: S) -> MessageActionBuilder {
+    pub fn pair<S: Into<String>>(mut self, key: S, value: S) -> MessageActionBuilder<T> {
         self.values.insert(key.into(), TemplatableString::Literal(value.into()));
         self
     }
 
-    pub fn inject_mode(mut self, mode: InjectMode) -> MessageActionBuilder {
+    pub fn inject_mode(mut self, mode: InjectMode) -> MessageActionBuilder<T> {
         self.inject_mode = mode;
         self
     }
 
-    pub fn build(self) -> MessageAction {
+    pub fn build(self) -> MessageAction<T> {
         MessageAction {
             uuid: self.uuid,
             name: self.name,

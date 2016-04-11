@@ -26,12 +26,12 @@ impl<E: Event> Default for ContextMap<E> {
     }
 }
 
-impl<E: Event> ContextMap<E> {
+impl<E, T> ContextMap<E> where E: Event {
     pub fn new() -> ContextMap<E> {
         ContextMap::default()
     }
 
-    pub fn from_configs(configs: Vec<ContextConfig>) -> ContextMap<E> {
+    pub fn from_configs(configs: Vec<ContextConfig<T>>) -> ContextMap<E> {
         let mut context_map = ContextMap::new();
         for i in configs {
             context_map.insert(i.into());

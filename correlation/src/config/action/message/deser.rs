@@ -12,10 +12,11 @@ use config::action::ExecCondition;
 
 use serde::de::{Deserialize, Deserializer, Error, MapVisitor, Visitor};
 use std::collections::BTreeMap;
+use std::marker::PhantomData;
 use TemplatableString;
 
-impl Deserialize for MessageAction {
-    fn deserialize<D>(deserializer: &mut D) -> Result<MessageAction, D::Error>
+impl<T> Deserialize for MessageAction<T> {
+    fn deserialize<D>(deserializer: &mut D) -> Result<MessageAction<T>, D::Error>
         where D: Deserializer
     {
         deserializer.deserialize_struct("MessageAction", &[], MessageActionVisitor)
@@ -59,12 +60,12 @@ impl Deserialize for Field {
     }
 }
 
-struct MessageActionVisitor;
+struct MessageActionVisitor<T>(PhantomData<T>);
 
-impl Visitor for MessageActionVisitor {
-    type Value = MessageAction;
+impl<T> Visitor for MessageActionVisitor<T> {
+    type Value = MessageAction<T>;
 
-    fn visit_map<V>(&mut self, mut visitor: V) -> Result<MessageAction, V::Error>
+    fn visit_map<V>(&mut self, mut visitor: V) -> Result<MessageAction<T>, V::Error>
         where V: MapVisitor
     {
         let mut name: Option<String> = None;

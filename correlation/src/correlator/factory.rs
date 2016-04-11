@@ -22,13 +22,13 @@ use Event;
 pub struct CorrelatorFactory;
 
 impl CorrelatorFactory {
-    pub fn from_path<T, P, E>(path: P) -> Result<Correlator<T, E>, Error> 
+    pub fn from_path<T, P, E>(path: P) -> Result<Correlator<T, E>, Error>
         where P: AsRef<Path>, E: Event {
         let contexts = try!(CorrelatorFactory::load_file(path));
         Ok(Correlator::new(ContextMap::from_configs(contexts)))
     }
 
-    pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Vec<ContextConfig>, Error> {
+    pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Vec<ContextConfig<String>>, Error> {
         match path.as_ref().extension() {
             Some(extension) => {
                 match try!(extension.to_str().ok_or(Error::NotUtf8FileName)) {

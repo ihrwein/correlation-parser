@@ -14,26 +14,26 @@ use conditions::Conditions;
 mod deser;
 pub mod action;
 
-pub struct ContextConfig {
+pub struct ContextConfig<T> {
     pub name: Option<String>,
     pub uuid: Uuid,
     pub conditions: Conditions,
     pub context_id: Option<Vec<String>>,
-    pub actions: Vec<ActionType>,
+    pub actions: Vec<ActionType<T>>,
     pub patterns: Vec<String>
 }
 
-pub struct ContextConfigBuilder {
+pub struct ContextConfigBuilder<T> {
     name: Option<String>,
     uuid: Uuid,
     conditions: Conditions,
     context_id: Option<Vec<String>>,
-    actions: Vec<ActionType>,
+    actions: Vec<ActionType<T>>,
     patterns: Vec<String>
 }
 
-impl ContextConfigBuilder {
-    pub fn new(uuid: Uuid, conditions: Conditions) -> ContextConfigBuilder {
+impl<T> ContextConfigBuilder<T> {
+    pub fn new(uuid: Uuid, conditions: Conditions) -> ContextConfigBuilder<T> {
         ContextConfigBuilder {
             name: None,
             uuid: uuid,
@@ -44,27 +44,27 @@ impl ContextConfigBuilder {
         }
     }
 
-    pub fn context_id(mut self, context_id: Option<Vec<String>>) -> ContextConfigBuilder {
+    pub fn context_id(mut self, context_id: Option<Vec<String>>) -> ContextConfigBuilder<T> {
         self.context_id = context_id;
         self
     }
 
-    pub fn actions(mut self, actions: Vec<ActionType>) -> ContextConfigBuilder {
+    pub fn actions(mut self, actions: Vec<ActionType<T>>) -> ContextConfigBuilder<T> {
         self.actions = actions;
         self
     }
 
-    pub fn name(mut self, name: String) -> ContextConfigBuilder {
+    pub fn name(mut self, name: String) -> ContextConfigBuilder<T> {
         self.name = Some(name);
         self
     }
 
-    pub fn patterns(mut self, patterns: Vec<String>) -> ContextConfigBuilder {
+    pub fn patterns(mut self, patterns: Vec<String>) -> ContextConfigBuilder<T> {
         self.patterns = patterns;
         self
     }
 
-    pub fn build(self) -> ContextConfig {
+    pub fn build(self) -> ContextConfig<T> {
         ContextConfig {
             name: self.name,
             uuid: self.uuid,

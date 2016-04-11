@@ -12,6 +12,7 @@ use dispatcher::Response;
 use dispatcher::response::ResponseSender;
 use Event;
 use TemplatableString;
+use Template;
 
 use std::collections::BTreeMap;
 use std::borrow::Borrow;
@@ -30,34 +31,33 @@ pub const CONTEXT_NAME: &'static str = "context_name";
 pub const CONTEXT_LEN: &'static str = "context_len";
 pub const MESSAGES: &'static str = "messages";
 
-pub struct MessageAction {
+pub struct MessageAction<T> {
     uuid: String,
     name: Option<String>,
-    message: TemplatableString,
-    values: BTreeMap<String, TemplatableString>,
+    message: T,
+    values: BTreeMap<String, T>,
     when: ExecCondition,
     inject_mode: InjectMode,
 }
 
-impl MessageAction {
+impl<T> MessageAction<T> {
     pub fn uuid(&self) -> &String {
         &self.uuid
     }
     pub fn name(&self) -> Option<&String> {
         self.name.as_ref()
     }
-    pub fn message(&self) -> &String {
-        let TemplatableString::Literal(ref message) = self.message;
-        &message
+    pub fn message(&self) -> &T {
+        &self.message;
     }
-    pub fn values(&self) -> &BTreeMap<String, TemplatableString> {
+    pub fn values(&self) -> &BTreeMap<String, T> {
         &self.values
     }
     pub fn inject_mode(&self) -> &InjectMode {
         &self.inject_mode
     }
 
-    fn execute<E: Event>(&self, _state: &State<E>, _context: &BaseContext, responder: &mut ResponseSender<E>) {
+    fn execute<E: Event>(&self, _state: &State<E>, _context: &BaseContext, responder: &mut ResponseSender<E>) where T: Template {
         let TemplatableString::Literal(ref message) = self.message;
         let mut event = E::new(&self.uuid, message);
         event.set_name(self.name.as_ref().map(|name| name.borrow()));
@@ -73,8 +73,8 @@ impl MessageAction {
     }
 }
 
-impl From<MessageAction> for super::ActionType {
-    fn from(action: MessageAction) -> super::ActionType {
+impl<T> From<MessageAction<T>> for super::ActionType<T> {
+    fn from(action: MessageAction<T>) -> super::ActionType<T> {
         super::ActionType::Message(action)
     }
 }
@@ -98,7 +98,7 @@ pub struct Alert<E: Event> {
     pub inject_mode: InjectMode,
 }
 
-impl<E: Event> Action<E> for MessageAction {
+impl<E, T> Action<E> for MessageAction<T> where E: Event {
     fn on_opened(&self, state: &State<E>, context: &BaseContext, responder: &mut ResponseSender<E>) {
         if self.when.on_opened {
             trace!("MessageAction: on_opened()");
