@@ -98,11 +98,6 @@ impl<'a> Iterator for EventIdsIterator<'a> {
 }
 
 #[derive(Debug)]
-pub trait TemplateFactory {
-    type Template: Template;
-    fn compile(value: &str) -> Result<Self::Template, CompileError>;
-}
-
 pub struct CompileError(String);
 
 use std::sync::Arc;
@@ -143,4 +138,8 @@ impl<E> de::Deserialize for TemplatableString<E> where E: Event {
     {
         deserializer.deserialize_str(Visitor {_marker: PhantomData})
     }
+}
+
+pub trait TemplateFactory<E> where E: Event {
+    fn compile(&self, &str) -> Result<Box<Template<Event=E>>, CompileError>;
 }
