@@ -15,13 +15,13 @@ use Template;
 
 pub type TemplateType<E: Event> = Box<Template<Event=E>>;
 
-pub struct ContextMap<E> where E: Event {
+pub struct ContextMap<E, T> where E: Event, T: Template<Event=E> {
     map: HashMap<String, Vec<usize>>,
-    contexts: Vec<Context<E, TemplateType<E>>>,
+    contexts: Vec<Context<E, T>>,
 }
 
-impl<E: Event> Default for ContextMap<E> {
-    fn default() -> ContextMap<E> {
+impl<E, T> Default for ContextMap<E, T> where E: Event, T: Template<Event=E> {
+    fn default() -> ContextMap<E, T> {
         ContextMap {
             map: HashMap::default(),
             contexts: Vec::default()
@@ -29,12 +29,12 @@ impl<E: Event> Default for ContextMap<E> {
     }
 }
 
-impl<E> ContextMap<E> where E: Event {
-    pub fn new() -> ContextMap<E> {
+impl<E, T> ContextMap<E, T> where E: Event, T: Template<Event=E> {
+    pub fn new() -> ContextMap<E, T> {
         ContextMap::default()
     }
 
-    pub fn from_configs<T>(configs: Vec<ContextConfig<T>>) -> ContextMap<E>
+    pub fn from_configs(configs: Vec<ContextConfig<T>>) -> ContextMap<E, T>
         where T: Template<Event=E> {
         let mut context_map = ContextMap::new();
         for i in configs {

@@ -16,7 +16,6 @@ use Event;
 use Template;
 use TemplateFactory;
 use CompileError;
-use context::context_map::TemplateType;
 
 mod deser;
 pub mod action;
@@ -29,6 +28,8 @@ pub struct ContextConfig<T> {
     pub actions: Vec<ActionType<T>>,
     pub patterns: Vec<String>
 }
+
+use context::context_map::TemplateType;
 
 fn compile_templates<E, TF>(original: Vec<ContextConfig<String>>, factory: &TF) -> Result<Vec<ContextConfig<TemplateType<E>>>, CompileError>
     where E: Event, TF: TemplateFactory<E> {
