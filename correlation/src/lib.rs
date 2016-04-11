@@ -97,6 +97,7 @@ impl<'a> Iterator for EventIdsIterator<'a> {
     }
 }
 
+#[derive(Debug)]
 pub trait TemplateFactory {
     type Template: Template;
     fn compile(value: &str) -> Result<Self::Template, CompileError>;
