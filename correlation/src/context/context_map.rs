@@ -34,7 +34,8 @@ impl<E> ContextMap<E> where E: Event {
         ContextMap::default()
     }
 
-    pub fn from_configs<T>(configs: Vec<ContextConfig<T>>) -> ContextMap<E> {
+    pub fn from_configs<T>(configs: Vec<ContextConfig<T>>) -> ContextMap<E>
+        where T: Template<Event=E> {
         let mut context_map = ContextMap::new();
         for i in configs {
             context_map.insert(i.into());

@@ -32,12 +32,12 @@ pub const CONTEXT_LEN: &'static str = "context_len";
 pub const MESSAGES: &'static str = "messages";
 
 pub struct MessageAction<T> {
-    uuid: String,
-    name: Option<String>,
-    message: T,
-    values: BTreeMap<String, T>,
-    when: ExecCondition,
-    inject_mode: InjectMode,
+    pub uuid: String,
+    pub name: Option<String>,
+    pub message: T,
+    pub values: BTreeMap<String, T>,
+    pub when: ExecCondition,
+    pub inject_mode: InjectMode,
 }
 
 impl<T> MessageAction<T> {

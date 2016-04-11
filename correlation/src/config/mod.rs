@@ -7,9 +7,16 @@
 // modified, or distributed except according to those terms.
 
 use uuid::Uuid;
+use std::collections::BTreeMap;
 
 use config::action::ActionType;
+use config::action::message::MessageAction;
 use conditions::Conditions;
+use Event;
+use Template;
+use TemplateFactory;
+use CompileError;
+use context::context_map::TemplateType;
 
 mod deser;
 pub mod action;
@@ -21,6 +28,49 @@ pub struct ContextConfig<T> {
     pub context_id: Option<Vec<String>>,
     pub actions: Vec<ActionType<T>>,
     pub patterns: Vec<String>
+}
+
+fn compile_templates<E, TF>(original: Vec<ContextConfig<String>>, factory: &TF) -> Result<Vec<ContextConfig<TemplateType<E>>>, CompileError>
+    where E: Event, TF: TemplateFactory<E> {
+    let mut new_contexts: Vec<ContextConfig<TemplateType<E>>> = Vec::new();
+    for context in original {
+        let ContextConfig {name, uuid, conditions, context_id, actions, patterns} = context;
+        let mut new_actions: Vec<ActionType<TemplateType<E>>> = Vec::new();
+
+        for action in actions {
+            let ActionType::Message(mut message_action) = action;
+            let MessageAction {uuid, name, message, values, when, inject_mode} = message_action;
+            let new_message = try!(factory.compile(&message));
+            let mut new_values = BTreeMap::new();
+
+            for (key, value) in values {
+                let value = try!(factory.compile(&value));
+                new_values.insert(key, value);
+            }
+
+            let action: MessageAction<TemplateType<E>> = MessageAction {
+                uuid: uuid,
+                name: name,
+                message: new_message,
+                values: new_values,
+                when: when,
+                inject_mode: inject_mode
+            };
+            new_actions.push(ActionType::Message(action));
+        }
+
+        let config = ContextConfig {
+            name: name,
+            uuid: uuid,
+            conditions: conditions,
+            context_id: context_id,
+            actions: new_actions,
+            patterns: patterns
+        };
+
+        new_contexts.push(config);
+    }
+    Ok(new_contexts)
 }
 
 pub struct ContextConfigBuilder<T> {

@@ -14,18 +14,22 @@ use serde_json;
 use serde_yaml;
 
 use config::ContextConfig;
+use config::action::ActionType;
+use config::compile_templates;
 use ContextMap;
 use super::Correlator;
 use super::Error;
 use Event;
+use TemplateFactory;
 
 pub struct CorrelatorFactory;
 
 impl CorrelatorFactory {
-    pub fn from_path<T, P, E>(path: P) -> Result<Correlator<T, E>, Error>
-        where P: AsRef<Path>, E: Event {
+    pub fn from_path<T, P, E, TF>(path: P, template_factory: &TF) -> Result<Correlator<T, E>, Error>
+        where P: AsRef<Path>, E: Event, TF: TemplateFactory<E> {
         let contexts = try!(CorrelatorFactory::load_file(path));
-        Ok(Correlator::new(ContextMap::from_configs(contexts)))
+        let contexts_after_template_compilation = try!(compile_templates(contexts, template_factory));
+        Ok(Correlator::new(ContextMap::from_configs(contexts_after_template_compilation)))
     }
 
     pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Vec<ContextConfig<String>>, Error> {

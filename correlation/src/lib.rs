@@ -97,11 +97,11 @@ impl<'a> Iterator for EventIdsIterator<'a> {
     }
 }
 
-pub trait TemplateFactory {
-    type Template: Template;
-    fn compile(value: &str) -> Result<Self::Template, CompileError>;
+pub trait TemplateFactory<E> where E: Event {
+    fn compile(&self, value: &str) -> Result<Box<Template<Event=E>>, CompileError>;
 }
 
+#[derive(Debug)]
 pub struct CompileError(String);
 
 use std::sync::Arc;
