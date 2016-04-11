@@ -47,7 +47,7 @@ impl<P, E> AlertHandler<P, E> for MessageSender where P: Pipe, E: Event + Into<L
 }
 
 pub struct CorrelationParserBuilder<P, E> where P: Pipe, E: Event {
-    contexts: Option<Vec<ContextConfig>>,
+    contexts: Option<Vec<ContextConfig<E>>>,
     formatter: MessageFormatter,
     _marker: PhantomData<(P, E)>
 }
