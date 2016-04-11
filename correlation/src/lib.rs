@@ -104,36 +104,36 @@ pub trait TemplateFactory {
 
 pub struct CompileError(String);
 
-pub trait Template {
+pub trait Template: Send {
     type Event: Event;
     fn format(&self, messages: &[Self::Event], context_id: &str) -> &str;
 }
 
-pub enum TemplatableString<T: Template> {
+pub enum TemplatableString<E> where E: Event {
     Literal(String),
-    Template(T)
+    Template(Box<Template<Event=E>>)
 }
 
 use std::marker::PhantomData;
 
-pub struct Visitor<T: Template> {
-    _marker: PhantomData<T>
+pub struct Visitor<E> where E: Event {
+    _marker: PhantomData<E>
 }
 
 use serde::de;
 
-impl<T> de::Visitor for Visitor<T> where T: Template {
-    type Value = TemplatableString<T>;
+impl<E> de::Visitor for Visitor<E> where E: Event {
+    type Value = TemplatableString<E>;
 
-    fn visit_str<E>(&mut self, value: &str) -> Result<TemplatableString<T>, E>
-        where E: de::Error
+    fn visit_str<ER>(&mut self, value: &str) -> Result<TemplatableString<E>, ER>
+        where ER: de::Error
     {
         Ok(TemplatableString::Literal(value.to_owned()))
     }
 }
 
-impl<T> de::Deserialize for TemplatableString<T> where T: Template {
-    fn deserialize<D>(deserializer: &mut D) -> Result<TemplatableString<T>, D::Error>
+impl<E> de::Deserialize for TemplatableString<E> where E: Event {
+    fn deserialize<D>(deserializer: &mut D) -> Result<TemplatableString<E>, D::Error>
         where D: de::Deserializer
     {
         deserializer.deserialize_str(Visitor {_marker: PhantomData})
