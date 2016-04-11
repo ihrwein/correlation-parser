@@ -45,8 +45,8 @@ impl<E: Event> Context<E> {
     }
 }
 
-impl<E: Event> From<ContextConfig> for Context<E> {
-    fn from(config: ContextConfig) -> Context<E> {
+impl<E: Event> From<ContextConfig<E>> for Context<E> {
+    fn from(config: ContextConfig<E>) -> Context<E> {
         let ContextConfig {name, uuid, conditions, context_id, actions, patterns} = config;
 
         let base = BaseContextBuilder::new(uuid, conditions);

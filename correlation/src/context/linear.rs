@@ -17,12 +17,12 @@ use context::base::BaseContext;
 use Event;
 
 pub struct LinearContext<E: Event> {
-    base: BaseContext,
+    base: BaseContext<E>,
     state: State<E>,
 }
 
 impl<E: Event> LinearContext<E> {
-    pub fn new(base: BaseContext) -> LinearContext<E> {
+    pub fn new(base: BaseContext<E>) -> LinearContext<E> {
         LinearContext {
             base: base,
             state: State::new(),

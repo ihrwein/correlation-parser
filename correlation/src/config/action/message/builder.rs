@@ -10,20 +10,21 @@ use TemplatableString;
 use super::MessageAction;
 use super::InjectMode;
 use config::action::ExecCondition;
+use Event;
 
 use std::collections::BTreeMap;
 
-pub struct MessageActionBuilder {
+pub struct MessageActionBuilder<E> where E: Event {
     uuid: String,
     name: Option<String>,
-    message: TemplatableString,
-    values: BTreeMap<String, TemplatableString>,
+    message: TemplatableString<E>,
+    values: BTreeMap<String, TemplatableString<E>>,
     when: ExecCondition,
     inject_mode: InjectMode,
 }
 
-impl MessageActionBuilder {
-    pub fn new<S: Into<String>>(uuid: S, message: S) -> MessageActionBuilder {
+impl<E> MessageActionBuilder<E> where E: Event {
+    pub fn new<S: Into<String>>(uuid: S, message: S) -> MessageActionBuilder<E> {
         MessageActionBuilder {
             uuid: uuid.into(),
             name: None,
@@ -34,32 +35,32 @@ impl MessageActionBuilder {
         }
     }
 
-    pub fn name<S: Into<String>>(mut self, name: Option<S>) -> MessageActionBuilder {
+    pub fn name<S: Into<String>>(mut self, name: Option<S>) -> MessageActionBuilder<E> {
         self.name = name.map(|name| name.into());
         self
     }
 
-    pub fn when(mut self, when: ExecCondition) -> MessageActionBuilder {
+    pub fn when(mut self, when: ExecCondition) -> MessageActionBuilder<E> {
         self.when = when;
         self
     }
 
-    pub fn values(mut self, values: BTreeMap<String, TemplatableString>) -> MessageActionBuilder {
+    pub fn values(mut self, values: BTreeMap<String, TemplatableString<E>>) -> MessageActionBuilder<E> {
         self.values = values;
         self
     }
 
-    pub fn pair<S: Into<String>>(mut self, key: S, value: S) -> MessageActionBuilder {
+    pub fn pair<S: Into<String>>(mut self, key: S, value: S) -> MessageActionBuilder<E> {
         self.values.insert(key.into(), TemplatableString::Literal(value.into()));
         self
     }
 
-    pub fn inject_mode(mut self, mode: InjectMode) -> MessageActionBuilder {
+    pub fn inject_mode(mut self, mode: InjectMode) -> MessageActionBuilder<E> {
         self.inject_mode = mode;
         self
     }
 
-    pub fn build(self) -> MessageAction {
+    pub fn build(self) -> MessageAction<E> {
         MessageAction {
             uuid: self.uuid,
             name: self.name,

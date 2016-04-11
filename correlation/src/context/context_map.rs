@@ -31,7 +31,7 @@ impl<E: Event> ContextMap<E> {
         ContextMap::default()
     }
 
-    pub fn from_configs(configs: Vec<ContextConfig>) -> ContextMap<E> {
+    pub fn from_configs(configs: Vec<ContextConfig<E>>) -> ContextMap<E> {
         let mut context_map = ContextMap::new();
         for i in configs {
             context_map.insert(i.into());

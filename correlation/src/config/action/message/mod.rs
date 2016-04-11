@@ -30,16 +30,16 @@ pub const CONTEXT_NAME: &'static str = "context_name";
 pub const CONTEXT_LEN: &'static str = "context_len";
 pub const MESSAGES: &'static str = "messages";
 
-pub struct MessageAction {
+pub struct MessageAction<E> where E: Event {
     uuid: String,
     name: Option<String>,
-    message: TemplatableString,
-    values: BTreeMap<String, TemplatableString>,
+    message: TemplatableString<E>,
+    values: BTreeMap<String, TemplatableString<E>>,
     when: ExecCondition,
     inject_mode: InjectMode,
 }
 
-impl MessageAction {
+impl<E> MessageAction<E> where E: Event {
     pub fn uuid(&self) -> &String {
         &self.uuid
     }
@@ -50,14 +50,14 @@ impl MessageAction {
         let TemplatableString::Literal(ref message) = self.message;
         &message
     }
-    pub fn values(&self) -> &BTreeMap<String, TemplatableString> {
+    pub fn values(&self) -> &BTreeMap<String, TemplatableString<E>> {
         &self.values
     }
     pub fn inject_mode(&self) -> &InjectMode {
         &self.inject_mode
     }
 
-    fn execute<E: Event>(&self, _state: &State<E>, _context: &BaseContext, responder: &mut ResponseSender<E>) {
+    fn execute(&self, _state: &State<E>, _context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
         let TemplatableString::Literal(ref message) = self.message;
         let mut event = E::new(&self.uuid, message);
         event.set_name(self.name.as_ref().map(|name| name.borrow()));
@@ -73,8 +73,8 @@ impl MessageAction {
     }
 }
 
-impl From<MessageAction> for super::ActionType {
-    fn from(action: MessageAction) -> super::ActionType {
+impl<E> From<MessageAction<E>> for super::ActionType<E> where E: Event {
+    fn from(action: MessageAction<E>) -> super::ActionType<E> {
         super::ActionType::Message(action)
     }
 }
@@ -98,15 +98,15 @@ pub struct Alert<E: Event> {
     pub inject_mode: InjectMode,
 }
 
-impl<E: Event> Action<E> for MessageAction {
-    fn on_opened(&self, state: &State<E>, context: &BaseContext, responder: &mut ResponseSender<E>) {
+impl<E: Event> Action<E> for MessageAction<E> {
+    fn on_opened(&self, state: &State<E>, context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
         if self.when.on_opened {
             trace!("MessageAction: on_opened()");
             self.execute(state, context, responder);
         }
     }
 
-    fn on_closed(&self, state: &State<E>, context: &BaseContext, responder: &mut ResponseSender<E>) {
+    fn on_closed(&self, state: &State<E>, context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
         if self.when.on_closed {
             trace!("MessageAction: on_closed()");
             self.execute(state, context, responder);

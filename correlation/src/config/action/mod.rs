@@ -16,17 +16,17 @@ use Event;
 pub mod message;
 mod deser;
 
-pub enum ActionType {
-    Message(MessageAction),
+pub enum ActionType<E> where E: Event {
+    Message(MessageAction<E>),
 }
 
-impl<E: Event> Action<E> for ActionType {
-    fn on_opened(&self, state: &State<E>, context: &BaseContext, responder: &mut ResponseSender<E>) {
+impl<E: Event> Action<E> for ActionType<E> {
+    fn on_opened(&self, state: &State<E>, context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
         match *self {
             ActionType::Message(ref action) => action.on_opened(state, context, responder),
         }
     }
-    fn on_closed(&self, state: &State<E>, context: &BaseContext, responder: &mut ResponseSender<E>) {
+    fn on_closed(&self, state: &State<E>, context: &BaseContext<E>, responder: &mut ResponseSender<E>) {
         match *self {
             ActionType::Message(ref action) => action.on_closed(state, context, responder),
         }

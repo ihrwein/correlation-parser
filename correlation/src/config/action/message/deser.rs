@@ -9,16 +9,19 @@
 use super::MessageAction;
 use super::InjectMode;
 use config::action::ExecCondition;
+use TemplatableString;
+use Event;
 
 use serde::de::{Deserialize, Deserializer, Error, MapVisitor, Visitor};
 use std::collections::BTreeMap;
-use TemplatableString;
+use std::marker::PhantomData;
 
-impl Deserialize for MessageAction {
-    fn deserialize<D>(deserializer: &mut D) -> Result<MessageAction, D::Error>
+impl<E> Deserialize for MessageAction<E> where E: Event {
+    fn deserialize<D>(deserializer: &mut D) -> Result<MessageAction<E>, D::Error>
         where D: Deserializer
     {
-        deserializer.deserialize_struct("MessageAction", &[], MessageActionVisitor)
+        let visitor = MessageActionVisitor(PhantomData);
+        deserializer.deserialize_struct("MessageAction", &[], visitor)
     }
 }
 
@@ -59,18 +62,20 @@ impl Deserialize for Field {
     }
 }
 
-struct MessageActionVisitor;
+struct MessageActionVisitor<E: Event> (
+    PhantomData<E>
+);
 
-impl Visitor for MessageActionVisitor {
-    type Value = MessageAction;
+impl<E> Visitor for MessageActionVisitor<E> where E: Event {
+    type Value = MessageAction<E>;
 
-    fn visit_map<V>(&mut self, mut visitor: V) -> Result<MessageAction, V::Error>
+    fn visit_map<V>(&mut self, mut visitor: V) -> Result<MessageAction<E>, V::Error>
         where V: MapVisitor
     {
         let mut name: Option<String> = None;
         let mut uuid: Option<String> = None;
         let mut message: Option<String> = None;
-        let mut values: Option<BTreeMap<String, TemplatableString>> = None;
+        let mut values: Option<BTreeMap<String, TemplatableString<E>>> = None;
         let mut when: ExecCondition = ExecCondition::new();
         let mut inject_mode = Default::default();
 
@@ -139,10 +144,12 @@ impl Deserialize for InjectMode {
 #[cfg(test)]
 mod test {
     use config::action::message::{MessageActionBuilder, MessageAction, InjectMode};
+    use Event;
+    use Message;
 
     use serde_json::from_str;
 
-    fn assert_message_action_eq(expected: &MessageAction, actual: &MessageAction) {
+    fn assert_message_action_eq<E>(expected: &MessageAction<E>, actual: &MessageAction<E>) where E: Event {
         assert_eq!(expected.uuid(), actual.uuid());
         assert_eq!(expected.name(), actual.name());
         assert_eq!(expected.message(), actual.message());
@@ -168,7 +175,7 @@ mod test {
                                    .pair("key1", "value1")
                                    .pair("key2", "value2")
                                    .build();
-        let result = from_str::<MessageAction>(text);
+        let result = from_str::<MessageAction<Message>>(text);
         let message = result.expect("Failed to deserialize a valid MessageAction object");
         assert_message_action_eq(&expected_message, &message);
     }
@@ -184,7 +191,7 @@ mod test {
         "#;
 
         let expected_message = MessageActionBuilder::new("UUID", "message").build();
-        let result = from_str::<MessageAction>(text);
+        let result = from_str::<MessageAction<>>(text);
         let message = result.expect("Failed to deserialize a valid MessageAction object");
         assert_message_action_eq(&expected_message, &message);
     }

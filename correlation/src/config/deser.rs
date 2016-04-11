@@ -7,17 +7,20 @@
 // modified, or distributed except according to those terms.
 
 use config::ContextConfig;
-use serde::de::{Deserialize, Deserializer, MapVisitor, Error, Visitor};
+use Event;
 
+use std::marker::PhantomData;
+use serde::de::{Deserialize, Deserializer, MapVisitor, Error, Visitor};
 use uuid::Uuid;
 
 const FIELDS: &'static [&'static str] = &["name", "uuid", "conditions", "actions"];
 
-impl Deserialize for ContextConfig {
-    fn deserialize<D>(deserializer: &mut D) -> Result<ContextConfig, D::Error>
+impl<E> Deserialize for ContextConfig<E> where E: Event {
+    fn deserialize<D>(deserializer: &mut D) -> Result<ContextConfig<E>, D::Error>
         where D: Deserializer
     {
-        deserializer.deserialize_struct("Context", FIELDS, ContextVisitor)
+        let visitor = ContextVisitor(PhantomData);
+        deserializer.deserialize_struct("Context", FIELDS, visitor)
     }
 }
 
@@ -58,9 +61,9 @@ impl Deserialize for Field {
     }
 }
 
-struct ContextVisitor;
+struct ContextVisitor<E: Event> (PhantomData<E>);
 
-impl ContextVisitor {
+impl<E> ContextVisitor<E> where E: Event {
     fn parse_uuid<V>(uuid: Option<String>) -> Result<Uuid, V::Error>
         where V: MapVisitor
     {
@@ -81,10 +84,10 @@ impl ContextVisitor {
     }
 }
 
-impl Visitor for ContextVisitor {
-    type Value = ContextConfig;
+impl<E> Visitor for ContextVisitor<E> where E: Event {
+    type Value = ContextConfig<E>;
 
-    fn visit_map<V>(&mut self, mut visitor: V) -> Result<ContextConfig, V::Error>
+    fn visit_map<V>(&mut self, mut visitor: V) -> Result<ContextConfig<E>, V::Error>
         where V: MapVisitor
     {
         let mut name = None;
@@ -105,7 +108,7 @@ impl Visitor for ContextVisitor {
             }
         }
 
-        let uuid = try!(ContextVisitor::parse_uuid::<V>(uuid));
+        let uuid = try!(ContextVisitor::<E>::parse_uuid::<V>(uuid));
         let actions = actions.unwrap_or_default();
 
         try!(visitor.end());

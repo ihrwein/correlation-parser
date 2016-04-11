@@ -1,11 +1,13 @@
 use serde;
 use super::{ActionType, ExecCondition};
+use Event;
+use std::marker::PhantomData;
 
 #[cfg(test)]
 mod test;
 
-impl serde::de::Deserialize for ActionType {
-    fn deserialize<D>(deserializer: &mut D) -> Result<ActionType, D::Error>
+impl<E> serde::de::Deserialize for ActionType<E> where E: Event {
+    fn deserialize<D>(deserializer: &mut D) -> Result<ActionType<E>, D::Error>
         where D: serde::de::Deserializer
     {
         enum Field {
@@ -36,12 +38,14 @@ impl serde::de::Deserialize for ActionType {
             }
         }
 
-        struct Visitor;
+        struct Visitor<E: Event> (
+            PhantomData<E>
+        );
 
-        impl serde::de::EnumVisitor for Visitor {
-            type Value = ActionType;
+        impl<E> serde::de::EnumVisitor for Visitor<E> where E: Event {
+            type Value = ActionType<E>;
 
-            fn visit<V>(&mut self, mut visitor: V) -> Result<ActionType, V::Error>
+            fn visit<V>(&mut self, mut visitor: V) -> Result<ActionType<E>, V::Error>
                 where V: serde::de::VariantVisitor
             {
                 match try!(visitor.visit_variant()) {
@@ -55,7 +59,8 @@ impl serde::de::Deserialize for ActionType {
 
         const VARIANTS: &'static [&'static str] = &["message"];
 
-        deserializer.deserialize_enum("ActionType", VARIANTS, Visitor)
+        let visitor = Visitor(PhantomData);
+        deserializer.deserialize_enum("ActionType", VARIANTS, visitor)
     }
 }
 
