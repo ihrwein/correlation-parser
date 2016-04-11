@@ -23,11 +23,11 @@ pub struct MessageActionBuilder<T> {
 }
 
 impl<T> MessageActionBuilder<T> {
-    pub fn new<S: Into<String>>(uuid: S, message: S) -> MessageActionBuilder<T> {
+    pub fn new<U: Into<String>, M: Into<T>>(uuid: U, message: M) -> MessageActionBuilder<T> {
         MessageActionBuilder {
             uuid: uuid.into(),
             name: None,
-            message: TemplatableString::Literal(message.into()),
+            message: message.into(),
             values: BTreeMap::default(),
             when: ExecCondition::default(),
             inject_mode: InjectMode::default(),
@@ -49,8 +49,8 @@ impl<T> MessageActionBuilder<T> {
         self
     }
 
-    pub fn pair<S: Into<String>>(mut self, key: S, value: S) -> MessageActionBuilder<T> {
-        self.values.insert(key.into(), TemplatableString::Literal(value.into()));
+    pub fn pair<K: Into<String>, V: Into<T>>(mut self, key: K, value: V) -> MessageActionBuilder<T> {
+        self.values.insert(key.into(), value.into());
         self
     }
 

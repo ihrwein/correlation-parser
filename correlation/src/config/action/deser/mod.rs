@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 #[cfg(test)]
 mod test;
 
-impl<T> serde::de::Deserialize for ActionType<T> {
+impl<T> serde::de::Deserialize for ActionType<T> where T: serde::de::Deserialize {
     fn deserialize<D>(deserializer: &mut D) -> Result<ActionType<T>, D::Error>
         where D: serde::de::Deserializer
     {
@@ -37,12 +37,12 @@ impl<T> serde::de::Deserialize for ActionType<T> {
             }
         }
 
-        struct Visitor;
+        struct Visitor<T>(PhantomData<T>);
 
-        impl<T> serde::de::EnumVisitor for Visitor<T> {
+        impl<T> serde::de::EnumVisitor for Visitor<T> where T: serde::de::Deserialize {
             type Value = ActionType<T>;
 
-            fn visit<V>(&mut self, mut visitor: V) -> Result<ActionType, V::Error>
+            fn visit<V>(&mut self, mut visitor: V) -> Result<ActionType<T>, V::Error>
                 where V: serde::de::VariantVisitor
             {
                 match try!(visitor.visit_variant()) {
@@ -56,7 +56,7 @@ impl<T> serde::de::Deserialize for ActionType<T> {
 
         const VARIANTS: &'static [&'static str] = &["message"];
 
-        deserializer.deserialize_enum("ActionType", VARIANTS, Visitor)
+        deserializer.deserialize_enum("ActionType", VARIANTS, Visitor(PhantomData))
     }
 }
 

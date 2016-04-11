@@ -14,11 +14,11 @@ use std::marker::PhantomData;
 
 const FIELDS: &'static [&'static str] = &["name", "uuid", "conditions", "actions"];
 
-impl<T> Deserialize for ContextConfig<T> {
+impl<T> Deserialize for ContextConfig<T> where T: Deserialize {
     fn deserialize<D>(deserializer: &mut D) -> Result<ContextConfig<T>, D::Error>
         where D: Deserializer
     {
-        deserializer.deserialize_struct("Context", FIELDS, ContextVisitor)
+        deserializer.deserialize_struct("Context", FIELDS, ContextVisitor(PhantomData))
     }
 }
 
@@ -82,10 +82,10 @@ impl<T> ContextVisitor<T> {
     }
 }
 
-impl<T> Visitor for ContextVisitor<T> {
+impl<T> Visitor for ContextVisitor<T> where T: Deserialize {
     type Value = ContextConfig<T>;
 
-    fn visit_map<V>(&mut self, mut visitor: V) -> Result<ContextConfig, V::Error>
+    fn visit_map<V>(&mut self, mut visitor: V) -> Result<ContextConfig<T>, V::Error>
         where V: MapVisitor
     {
         let mut name = None;
@@ -106,7 +106,7 @@ impl<T> Visitor for ContextVisitor<T> {
             }
         }
 
-        let uuid = try!(ContextVisitor::parse_uuid::<V>(uuid));
+        let uuid = try!(ContextVisitor::<T>::parse_uuid::<V>(uuid));
         let actions = actions.unwrap_or_default();
 
         try!(visitor.end());

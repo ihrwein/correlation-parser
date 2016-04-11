@@ -15,11 +15,11 @@ use std::collections::BTreeMap;
 use std::marker::PhantomData;
 use TemplatableString;
 
-impl<T> Deserialize for MessageAction<T> {
+impl<T> Deserialize for MessageAction<T> where T: Deserialize {
     fn deserialize<D>(deserializer: &mut D) -> Result<MessageAction<T>, D::Error>
         where D: Deserializer
     {
-        deserializer.deserialize_struct("MessageAction", &[], MessageActionVisitor)
+        deserializer.deserialize_struct("MessageAction", &[], MessageActionVisitor(PhantomData))
     }
 }
 
@@ -62,7 +62,7 @@ impl Deserialize for Field {
 
 struct MessageActionVisitor<T>(PhantomData<T>);
 
-impl<T> Visitor for MessageActionVisitor<T> {
+impl<T> Visitor for MessageActionVisitor<T> where T: Deserialize {
     type Value = MessageAction<T>;
 
     fn visit_map<V>(&mut self, mut visitor: V) -> Result<MessageAction<T>, V::Error>
@@ -70,8 +70,8 @@ impl<T> Visitor for MessageActionVisitor<T> {
     {
         let mut name: Option<String> = None;
         let mut uuid: Option<String> = None;
-        let mut message: Option<String> = None;
-        let mut values: Option<BTreeMap<String, TemplatableString>> = None;
+        let mut message: Option<T> = None;
+        let mut values: Option<BTreeMap<String, T>> = None;
         let mut when: ExecCondition = ExecCondition::new();
         let mut inject_mode = Default::default();
 
@@ -103,7 +103,7 @@ impl<T> Visitor for MessageActionVisitor<T> {
 
         Ok(MessageAction {
             uuid: uuid,
-            message: TemplatableString::Literal(message),
+            message: message,
             name: name,
             values: values.unwrap_or_default(),
             when: when,
@@ -143,7 +143,7 @@ mod test {
 
     use serde_json::from_str;
 
-    fn assert_message_action_eq(expected: &MessageAction, actual: &MessageAction) {
+    fn assert_message_action_eq<T>(expected: &MessageAction<T>, actual: &MessageAction<T>) {
         assert_eq!(expected.uuid(), actual.uuid());
         assert_eq!(expected.name(), actual.name());
         assert_eq!(expected.message(), actual.message());

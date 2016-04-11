@@ -19,13 +19,13 @@ use Event;
 pub type ContextKey = Vec<(String, String)>;
 
 pub struct MapContext<E: Event> {
-    base: BaseContext,
+    base: BaseContext<E>,
     map: BTreeMap<ContextKey, State<E>>,
     context_id: Vec<String>,
 }
 
 impl<E: Event> MapContext<E> {
-    pub fn new(base: BaseContext, context_id: Vec<String>) -> MapContext<E> {
+    pub fn new(base: BaseContext<E>, context_id: Vec<String>) -> MapContext<E> {
         MapContext {
             base: base,
             map: BTreeMap::new(),

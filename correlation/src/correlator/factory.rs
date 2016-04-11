@@ -34,11 +34,11 @@ impl CorrelatorFactory {
                 match try!(extension.to_str().ok_or(Error::NotUtf8FileName)) {
                     "json" => {
                         let content = try!(CorrelatorFactory::read(&path));
-                        serde_json::from_str::<Vec<ContextConfig>>(&content).map_err(Error::SerdeJson)
+                        serde_json::from_str::<Vec<ContextConfig<String>>>(&content).map_err(Error::SerdeJson)
                     },
                     "yaml" | "yml" | "YAML" | "YML" => {
                         let content = try!(CorrelatorFactory::read(&path));
-                        serde_yaml::from_str::<Vec<ContextConfig>>(&content).map_err(Error::SerdeYaml)
+                        serde_yaml::from_str::<Vec<ContextConfig<String>>>(&content).map_err(Error::SerdeYaml)
                     },
                     _ => Err(Error::UnsupportedFileExtension),
                 }

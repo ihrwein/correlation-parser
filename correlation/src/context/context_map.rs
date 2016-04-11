@@ -11,8 +11,9 @@ use std::collections::HashMap;
 use config::ContextConfig;
 use context::Context;
 use Event;
+use Template;
 
-pub struct ContextMap<E: Event> {
+pub struct ContextMap<E> where E: Event {
     map: HashMap<String, Vec<usize>>,
     contexts: Vec<Context<E>>,
 }
@@ -26,12 +27,12 @@ impl<E: Event> Default for ContextMap<E> {
     }
 }
 
-impl<E, T> ContextMap<E> where E: Event {
+impl<E> ContextMap<E> where E: Event {
     pub fn new() -> ContextMap<E> {
         ContextMap::default()
     }
 
-    pub fn from_configs(configs: Vec<ContextConfig<T>>) -> ContextMap<E> {
+    pub fn from_configs(configs: Vec<ContextConfig<String>>) -> ContextMap<E> {
         let mut context_map = ContextMap::new();
         for i in configs {
             context_map.insert(i.into());
