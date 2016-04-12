@@ -13,7 +13,6 @@ use config::action::ActionType;
 use config::action::message::MessageAction;
 use conditions::Conditions;
 use Event;
-use Template;
 use TemplateFactory;
 use CompileError;
 
@@ -39,7 +38,7 @@ pub fn compile_templates<E, TF>(original: Vec<ContextConfig<String>>, factory: &
         let mut new_actions: Vec<ActionType<TemplateType<E>>> = Vec::new();
 
         for action in actions {
-            let ActionType::Message(mut message_action) = action;
+            let ActionType::Message(message_action) = action;
             let MessageAction {uuid, name, message, values, when, inject_mode} = message_action;
             let new_message = try!(factory.compile(&message));
             let mut new_values = BTreeMap::new();

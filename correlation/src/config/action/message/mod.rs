@@ -11,7 +11,6 @@ use context::base::BaseContext;
 use dispatcher::Response;
 use dispatcher::response::ResponseSender;
 use Event;
-use TemplatableString;
 use Template;
 
 use std::collections::BTreeMap;

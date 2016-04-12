@@ -14,7 +14,6 @@ use serde_json;
 use serde_yaml;
 
 use config::ContextConfig;
-use config::action::ActionType;
 use config::compile_templates;
 use ContextMap;
 use super::Correlator;

@@ -13,7 +13,6 @@ use config::action::ExecCondition;
 use serde::de::{Deserialize, Deserializer, Error, MapVisitor, Visitor};
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
-use TemplatableString;
 
 impl<T> Deserialize for MessageAction<T> where T: Deserialize {
     fn deserialize<D>(deserializer: &mut D) -> Result<MessageAction<T>, D::Error>

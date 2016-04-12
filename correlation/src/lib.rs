@@ -112,10 +112,10 @@ pub trait Template: Send {
     fn format(&self, message: &Self::Event) -> &str;
 }
 
-impl<E> Template for Box<Template<Event=E>> where E: Event {
+impl<E, T> Template for Box<T> where E: Event, T: Template<Event=E> {
     type Event = E;
     fn format_with_context(&self, messages: &[Arc<Self::Event>], context_id: &str) -> &str {
-        self.format_with_context(messages, context_id)
+        (&*self).format_with_context(messages, context_id)
     }
     fn format(&self, message: &Self::Event) -> &str {
         self.format(message)
