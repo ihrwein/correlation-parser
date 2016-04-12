@@ -40,11 +40,10 @@ fn test_given_message_action_when_it_is_executed_then_the_additional_values_are_
                             Arc::new(MessageBuilder::new("uuid2", "message2").build())];
         State::with_messages(messages)
     };
-    let template_factory = MockTemplateFactory::literal("message");
-    let template = template_factory.compile("doesn't matter").unwrap();
-    let message_action = MessageActionBuilder::<MockTemplate>::new("uuid", template)
-                                              .pair("key1", "value1")
-                                              .pair("key2", "value2")
+    let template_factory = MockTemplateFactory::format_literal("message");
+    let message_action = MessageActionBuilder::<MockTemplate>::new("uuid", MockTemplateFactory::format_literal("message").compile("").unwrap())
+                                              .pair("key1", MockTemplateFactory::format_literal("value1").compile("").unwrap())
+                                              .pair("key2", MockTemplateFactory::format_literal("value2").compile("").unwrap())
                                               .build();
 
     message_action.on_closed(&state, &base_context, &mut responder);

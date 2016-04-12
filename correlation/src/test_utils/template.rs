@@ -59,7 +59,7 @@ impl TemplateFactory<Message> for MockTemplateFactory {
 #[test]
 fn test_mock_template_factory_can_generate_errors() {
     let factory = MockTemplateFactory::compile_error();
-    let expected = Err(CompileError("ERROR".to_owned()));
-    let actual = factory.compile("ERROR");
+    let expected = CompileError("ERROR".to_owned());
+    let actual = factory.compile("ERROR").err().unwrap();
     assert_eq!(expected, actual);
 }
