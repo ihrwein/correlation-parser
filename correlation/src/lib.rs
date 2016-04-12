@@ -110,7 +110,6 @@ use std::sync::Arc;
 pub trait Template: Send {
     type Event: Event;
     fn format_with_context(&self, messages: &[Arc<Self::Event>], context_id: &str) -> &str;
-    fn format(&self, message: &Self::Event) -> &str;
 }
 
 pub enum TemplatableString<E> where E: Event {
