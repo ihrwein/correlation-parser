@@ -13,8 +13,6 @@ use context::Context;
 use Event;
 use Template;
 
-pub type TemplateType<E: Event> = Box<Template<Event=E>>;
-
 pub struct ContextMap<E, T> where E: Event, T: Template<Event=E> {
     map: HashMap<String, Vec<usize>>,
     contexts: Vec<Context<E, T>>,

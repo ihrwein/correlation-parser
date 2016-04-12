@@ -15,6 +15,7 @@ use conditions::Conditions;
 use Event;
 use TemplateFactory;
 use CompileError;
+use std::borrow::Borrow;
 
 mod deser;
 pub mod action;
@@ -28,27 +29,25 @@ pub struct ContextConfig<T> {
     pub patterns: Vec<String>
 }
 
-use context::context_map::TemplateType;
-
-pub fn compile_templates<E, TF>(original: Vec<ContextConfig<String>>, factory: &TF) -> Result<Vec<ContextConfig<TemplateType<E>>>, CompileError>
-    where E: Event, TF: TemplateFactory<E> {
-    let mut new_contexts: Vec<ContextConfig<TemplateType<E>>> = Vec::new();
+pub fn compile_templates<T, E, TF>(original: Vec<ContextConfig<T>>, factory: &TF) -> Result<Vec<ContextConfig<TF::Template>>, CompileError>
+    where T: Borrow<str>, E: Event, TF: TemplateFactory<E> {
+    let mut new_contexts: Vec<ContextConfig<TF::Template>> = Vec::new();
     for context in original {
         let ContextConfig {name, uuid, conditions, context_id, actions, patterns} = context;
-        let mut new_actions: Vec<ActionType<TemplateType<E>>> = Vec::new();
+        let mut new_actions: Vec<ActionType<TF::Template>> = Vec::new();
 
         for action in actions {
             let ActionType::Message(message_action) = action;
             let MessageAction {uuid, name, message, values, when, inject_mode} = message_action;
-            let new_message = try!(factory.compile(&message));
+            let new_message = try!(factory.compile(message.borrow()));
             let mut new_values = BTreeMap::new();
 
             for (key, value) in values {
-                let value = try!(factory.compile(&value));
+                let value = try!(factory.compile(value.borrow()));
                 new_values.insert(key, value);
             }
 
-            let action: MessageAction<TemplateType<E>> = MessageAction {
+            let action: MessageAction<TF::Template> = MessageAction {
                 uuid: uuid,
                 name: name,
                 message: new_message,

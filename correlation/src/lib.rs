@@ -98,7 +98,8 @@ impl<'a> Iterator for EventIdsIterator<'a> {
 }
 
 pub trait TemplateFactory<E> where E: Event {
-    fn compile(&self, value: &str) -> Result<Box<Template<Event=E>>, CompileError>;
+    type Template: Template<Event=E>;
+    fn compile(&self, value: &str) -> Result<Self::Template, CompileError>;
 }
 
 #[derive(Debug)]
@@ -110,16 +111,6 @@ pub trait Template: Send {
     type Event: Event;
     fn format_with_context(&self, messages: &[Arc<Self::Event>], context_id: &str) -> &str;
     fn format(&self, message: &Self::Event) -> &str;
-}
-
-impl<E, T> Template for Box<T> where E: Event, T: Template<Event=E> {
-    type Event = E;
-    fn format_with_context(&self, messages: &[Arc<Self::Event>], context_id: &str) -> &str {
-        (&*self).format_with_context(messages, context_id)
-    }
-    fn format(&self, message: &Self::Event) -> &str {
-        self.format(message)
-    }
 }
 
 pub enum TemplatableString<E> where E: Event {
