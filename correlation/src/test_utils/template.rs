@@ -19,19 +19,23 @@ impl Template for MockTemplate {
     }
 }
 
-pub struct MockTemplateFactory(Box<Fn() -> Result<MockTemplate, CompileError>>);
+enum MockTime {
+    Format(Box<Fn() -> Result<MockTemplate, CompileError>>)
+}
+
+pub struct MockTemplateFactory (MockTime);
 
 impl MockTemplateFactory {
     pub fn compile_error(error: &'static str) -> MockTemplateFactory {
-        MockTemplateFactory(Box::new(move || { Err(CompileError(error.to_owned())) }))
+        MockTemplateFactory(MockTime::Format(Box::new(move || { Err(CompileError(error.to_owned())) })))
     }
     pub fn literal(value: &'static str) -> MockTemplateFactory {
-        MockTemplateFactory(Box::new(move || {
+        MockTemplateFactory(MockTime::Format(Box::new(move || {
             let template = MockTemplate {
                 with_context: Box::new(move |_, _| { value }),
             };
             Ok(template)
-        }))
+        })))
     }
     pub fn context_id() -> MockTemplateFactory {
         MockTemplateFactory::literal(CONTEXT_ID)
@@ -41,7 +45,9 @@ impl MockTemplateFactory {
 impl TemplateFactory<Message> for MockTemplateFactory {
     type Template = MockTemplate;
     fn compile(&self, _: &str) -> Result<MockTemplate, CompileError> {
-        self.0()
+        match self.0 {
+            MockTime::Format(ref clojure) => clojure()
+        }
     }
 }
 
