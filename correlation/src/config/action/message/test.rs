@@ -21,6 +21,9 @@ use std::time::Duration;
 use std::sync::Arc;
 use uuid::Uuid;
 use Event;
+use Message;
+use TemplateFactory;
+use test_utils::{MockTemplate, MockTemplateFactory};
 
 #[test]
 fn test_given_message_action_when_it_is_executed_then_the_additional_values_are_inserted_into_the_generated_message
@@ -30,14 +33,16 @@ fn test_given_message_action_when_it_is_executed_then_the_additional_values_are_
     let base_context = {
         let conditions = ConditionsBuilder::new(Duration::from_millis(100)).build();
         let uuid = Uuid::new_v4();
-        BaseContextBuilder::new(uuid, conditions).name(Some("name".to_owned())).build()
+        BaseContextBuilder::<Message, MockTemplate>::new(uuid, conditions).name(Some("name".to_owned())).build()
     };
     let state = {
         let messages = vec![Arc::new(MessageBuilder::new("uuid1", "message1").build()),
                             Arc::new(MessageBuilder::new("uuid2", "message2").build())];
         State::with_messages(messages)
     };
-    let message_action = MessageActionBuilder::new("uuid", "message")
+    let template_factory = MockTemplateFactory::literal("message");
+    let template = template_factory.compile("doesn't matter").unwrap();
+    let message_action = MessageActionBuilder::<MockTemplate>::new("uuid", template)
                                               .pair("key1", "value1")
                                               .pair("key2", "value2")
                                               .build();

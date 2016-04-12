@@ -9,7 +9,7 @@ use std::sync::Arc;
 pub const CONTEXT_ID: &'static str = "${context_id}";
 
 pub struct MockTemplate {
-    pub with_context: Box<for<'a, 'b, 'c> Fn(&[Arc<Message>], &str) -> &'a str + Send>,
+    pub with_context: Box<for<'a> Fn(&[Arc<Message>], &str) -> &'a str + Send>,
 }
 
 impl Template for MockTemplate {
@@ -22,7 +22,7 @@ impl Template for MockTemplate {
 pub struct MockTemplateFactory(Box<Fn() -> Result<MockTemplate, CompileError>>);
 
 impl MockTemplateFactory {
-    pub fn error(error: &'static str) -> MockTemplateFactory {
+    pub fn compile_error(error: &'static str) -> MockTemplateFactory {
         MockTemplateFactory(Box::new(move || { Err(CompileError(error.to_owned())) }))
     }
     pub fn literal(value: &'static str) -> MockTemplateFactory {
@@ -47,9 +47,8 @@ impl TemplateFactory<Message> for MockTemplateFactory {
 
 #[test]
 fn test_mock_template_factory_can_generate_errors() {
-    let factory = MockTemplateFactory::error("ERROR");
-    let template = factory.compile("doesn't matter");
+    let factory = MockTemplateFactory::compile_error("ERROR");
     let expected = Err(CompileError("ERROR".to_owned()));
-    let actual = template.format(&Vec::new(), "context id");
+    let actual = factory.compile("doesn't matter");
     assert_eq!(expected, actual);
 }

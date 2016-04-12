@@ -9,7 +9,7 @@
 use correlation::Alert;
 use correlation::correlator::{Correlator, CorrelatorFactory, Error};
 use correlation::{MessageBuilder, Message};
-use correlation::test_utils::MockAlertHandler;
+use correlation::test_utils::{MockAlertHandler, MockTemplateFactory};
 
 use env_logger;
 
