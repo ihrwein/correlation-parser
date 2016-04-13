@@ -111,34 +111,3 @@ pub trait Template: Send {
     type Event: Event;
     fn format_with_context(&self, messages: &[Arc<Self::Event>], context_id: &str) -> &str;
 }
-
-pub enum TemplatableString<E> where E: Event {
-    Literal(String),
-    Template(Box<Template<Event=E>>)
-}
-
-use std::marker::PhantomData;
-
-pub struct Visitor<E> where E: Event {
-    _marker: PhantomData<E>
-}
-
-use serde::de;
-
-impl<E> de::Visitor for Visitor<E> where E: Event {
-    type Value = TemplatableString<E>;
-
-    fn visit_str<ER>(&mut self, value: &str) -> Result<TemplatableString<E>, ER>
-        where ER: de::Error
-    {
-        Ok(TemplatableString::Literal(value.to_owned()))
-    }
-}
-
-impl<E> de::Deserialize for TemplatableString<E> where E: Event {
-    fn deserialize<D>(deserializer: &mut D) -> Result<TemplatableString<E>, D::Error>
-        where D: de::Deserializer
-    {
-        deserializer.deserialize_str(Visitor {_marker: PhantomData})
-    }
-}
