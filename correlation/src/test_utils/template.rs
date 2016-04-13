@@ -45,12 +45,12 @@ impl MockTemplate {
             with_context: Box::new(LiteralMockTemplate(value.to_owned())),
         }
     }
-    pub fn contetxt_id() -> MockTemplate {
+    pub fn context_id() -> MockTemplate {
         MockTemplate {
             with_context: Box::new(context_id),
         }
     }
-    pub fn contetxt_len() -> MockTemplate {
+    pub fn context_len() -> MockTemplate {
         MockTemplate {
             with_context: Box::new(context_len),
         }
@@ -116,7 +116,7 @@ fn test_mock_template_returns_the_expected_literal() {
 #[test]
 fn test_mock_template_can_return_context_id() {
     let context_id = "79ace9c4-0693-4d5b-97d8-de39322bc64d";
-    let template = MockTemplate::contetxt_id();
+    let template = MockTemplate::context_id();
     let mut actual = String::new();
     template.format_with_context(&[], context_id, &mut actual);
     assert_eq!(context_id, actual);
@@ -125,7 +125,7 @@ fn test_mock_template_can_return_context_id() {
 #[test]
 fn test_mock_template_can_return_context_length() {
     let expected = "0";
-    let template = MockTemplate::contetxt_len();
+    let template = MockTemplate::context_len();
     let mut actual = String::new();
     template.format_with_context(&[], "doesn't matter", &mut actual);
     assert_eq!(expected, actual);
