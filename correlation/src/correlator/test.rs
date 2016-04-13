@@ -112,7 +112,7 @@ fn test_given_manually_built_correlator_when_it_closes_a_context_then_the_action
         ContextConfigBuilder::new(Uuid::new_v4(), condition.clone()).patterns(patterns.clone()).actions(vec![MessageActionBuilder::<String>::new("uuid", "message").build().into()]).build(),
         ContextConfigBuilder::new(Uuid::new_v4(), condition.clone()).patterns(patterns.clone()).actions(vec![MessageActionBuilder::<String>::new("uuid", "message").build().into()]).build(),
     ];
-    let template_factory = MockTemplateFactory::format_literal("literal");
+    let template_factory = MockTemplateFactory::compile_value();
     let contexts = compile_templates(contexts, &template_factory).unwrap();
     let mut responses = Vec::new();
     let alert_handler = Box::new(MockAlertHandler);
@@ -152,7 +152,7 @@ fn test_given_correlator_when_it_is_built_from_json_then_it_produces_the_expecte
     let uuid3 = "3b47ba91-d867-4a8c-9553-a5dfd6ea1274".to_owned();
     let result = from_str::<Vec<ContextConfig<String>>>(JSON_CONFIG);
     let contexts = result.expect("Failed to deserialize a config::ContextConfig from JSON");
-    let template_factory = MockTemplateFactory::format_literal("literal");
+    let template_factory = MockTemplateFactory::compile_value();
     let contexts = compile_templates(contexts, &template_factory).unwrap();
     let mut responses = Vec::new();
     let alert_handler = Box::new(MockAlertHandler);

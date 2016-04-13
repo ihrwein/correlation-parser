@@ -22,7 +22,6 @@ use std::sync::Arc;
 use uuid::Uuid;
 use Event;
 use Message;
-use TemplateFactory;
 use test_utils::{MockTemplate, MockTemplateFactory};
 
 #[test]
@@ -40,10 +39,9 @@ fn test_given_message_action_when_it_is_executed_then_the_additional_values_are_
                             Arc::new(MessageBuilder::new("uuid2", "message2").build())];
         State::with_messages(messages)
     };
-    let template_factory = MockTemplateFactory::format_literal("message");
-    let message_action = MessageActionBuilder::<MockTemplate>::new("uuid", MockTemplateFactory::format_literal("message").compile("").unwrap())
-                                              .pair("key1", MockTemplateFactory::format_literal("value1").compile("").unwrap())
-                                              .pair("key2", MockTemplateFactory::format_literal("value2").compile("").unwrap())
+    let message_action = MessageActionBuilder::<MockTemplate>::new("uuid", MockTemplate::literal("message"))
+                                              .pair("key1", MockTemplate::literal("value1"))
+                                              .pair("key2", MockTemplate::literal("value2"))
                                               .build();
 
     message_action.on_closed(&state, &base_context, &mut responder);
